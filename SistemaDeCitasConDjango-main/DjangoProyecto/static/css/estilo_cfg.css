@@ -1,0 +1,175 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f7f8fa;
+    color: #333;
+}
+
+.container {
+    max-width: 960px;
+}
+
+h3 {
+    font-size: 2rem;
+    color: #1d1d1d;
+    margin-bottom: 20px;
+}
+
+h4 {
+    font-size: 1.5rem;
+    color: #555;
+    margin-top: 30px;
+}
+
+.tab-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+}
+
+.btn-primary:hover {
+    background-color: #45a049;
+    border-color: #45a049;
+}
+
+.table {
+    margin-top: 20px;
+}
+
+.table th {
+    background-color: #007bff;
+    color: white;
+    font-weight: 600;
+}
+
+.table td {
+    color: #666;
+}
+
+
+.modal {
+    z-index: 1050;
+}
+
+.modal-content {
+    border: 2px solid red;
+}
+
+.modal-header {
+    background-color: #f1f1f1;
+    border-bottom: 1px solid #ddd;
+}
+
+.modal-footer button {
+    border-radius: 5px;
+}
+
+.eliminar-profesional {
+    background-color: #f44336;
+    border-color: #f44336;
+}
+
+.eliminar-profesional:hover {
+    background-color: #e53935;
+    border-color: #e53935;
+}
+
+.close {
+    color: #333;
+}
+
+.close:hover {
+    color: #007bff;
+}
+
+
+/* Asegura que todos los inputs tengan el mismo ancho */
+
+form .form-control {
+    width: 100%;
+    height: 38px;
+}
+
+
+/* Alinea etiquetas con el input, siempre encima */
+
+form label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
+
+
+/* Asegura que los campos estén bien alineados y tengan el mismo padding */
+
+form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+
+/* Asegura que todos los campos de entrada (input) tengan el mismo tamaño */
+
+.form-disponibilidad p {
+    margin-bottom: 15px;
+    /* Espaciado entre los campos */
+}
+
+
+/* Los inputs tendrán el 100% del ancho de su contenedor */
+
+.form-disponibilidad p input,
+.form-disponibilidad p select,
+.form-disponibilidad p textarea {
+    width: 100%;
+    /* Hace que los inputs tengan el mismo tamaño */
+    padding: 10px;
+    /* Añade padding para que se vea más grande y legible */
+    border: 1px solid #ccc;
+    /* Agrega borde a los inputs */
+    border-radius: 5px;
+    /* Bordes redondeados */
+    box-sizing: border-box;
+    /* Asegura que el padding y el borde no sobrepasen el tamaño */
+}
+
+
+/* Estilo para el botón */
+
+.form-disponibilidad button {
+    margin-top: 20px;
+    /* Espacio entre el último input y el botón */
+    padding: 10px 15px;
+    /* Padding para el botón */
+    width: 100%;
+    /* El botón ocupa todo el ancho del formulario */
+    font-size: 16px;
+    /* Tamaño de fuente para el botón */
+    border: none;
+    /* Sin borde */
+    border-radius: 5px;
+    /* Bordes redondeados */
+}
+
+
+/* Estilo para los botones primarios de Bootstrap */
+
+.form-disponibilidad .btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.form-disponibilidad .btn-primary:hover {
+    background-color: #0056b3;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    header {
+        padding: 10px;
+    }
+}
