@@ -1049,8 +1049,3 @@ def editar_servicios(request, id_servicio):
         servicio.save()
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'error'})
-
-
-
-
-

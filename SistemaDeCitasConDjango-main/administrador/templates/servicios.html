@@ -191,9 +191,9 @@
                   if (response.status === 'success') {
                     $('button[data-id="' + idServ + '"]').closest('tr').remove();
                     $('#modalEliminar').attr('aria-hidden', 'true').attr('inert', '').modal('hide');
-                    alert(response.message);
+                    alert('Servicio eliminado exitosamente.');
                   } else {
-                    alert(response.message);
+                    alert('Error al eliminar el servicio');
                   }
                 },
                 error: function () {

@@ -152,10 +152,18 @@ class FormServicios(forms.ModelForm):
     class Meta:
         model = Servicio
         fields = ['id_servicio', 'nombre_servicio', 'descripcion_servicio', 'profesionales', 'lugares', 'servicio_estado']
-        widgets = {
-            'servicio_estado': forms.Select(choices=[(True, 'Activo'), (False, 'Inactivo')]),
-        }
     
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Filtrar servicios existentes
+        self.fields['nombre_servicio'] = forms.ModelChoiceField(
+            queryset=Servicio.objects.all(),
+            empty_label="Seleccione un servicio existente",
+            required=False,  # Permite que se deje vacío para crear uno nuevo
+            widget=forms.Select(attrs={'class': 'form-control'})
+        )
+
 
 class CargarHorarioArchivoForm(forms.Form):
     archivo = forms.FileField(label="Subir archivo CSV o XLSX")
