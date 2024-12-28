@@ -22,14 +22,23 @@ def crear_objeto(request, form_class, success_url, template_name):
         form = form_class()
     return render(request, template_name, {'form': form})
 
+from django import forms
+from .models import Profesional
+
 class FormProfesional(forms.ModelForm):
     class Meta:
         model = Profesional
-        fields = ['num_doc_prof', 'nombre_prof', 'especialidad_prof', 'telefono_prof', 'email_prof', 'estado_prof']
+        fields = ['num_doc_prof', 'nombre_prof', 'especialidad_prof', 'telefono_prof', 'email_prof', 'estado_prof', 'lugares']
+        widgets = {
+            'num_doc_prof': forms.TextInput(attrs={'class': 'form-control'}),
+            'nombre_prof': forms.TextInput(attrs={'class': 'form-control'}),
+            'especialidad_prof': forms.TextInput(attrs={'class': 'form-control'}),
+            'telefono_prof': forms.TextInput(attrs={'class': 'form-control'}),
+            'email_prof': forms.EmailInput(attrs={'class': 'form-control'}),
+            'estado_prof': forms.Select(choices=[(True, 'Activo'), (False, 'Inactivo')], attrs={'class': 'form-control'}),
+            'lugares': forms.SelectMultiple(attrs={'class': 'form-control'}),  # Selección múltiple
+        }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['estado_prof'].widget = forms.CheckboxInput(attrs={'class': 'form-check-input'})
 
 class FormLugares(forms.ModelForm):
     class Meta:
@@ -149,19 +158,23 @@ class PacienteForm(forms.ModelForm):
 
 
 class FormServicios(forms.ModelForm):
+    ESTADOS = [
+        ('True', 'Activo'),
+        ('False', 'Inactivo'),
+    ]
+
     class Meta:
         model = Servicio
-        fields = ['id_servicio', 'nombre_servicio', 'descripcion_servicio', 'profesionales', 'lugares', 'servicio_estado']
+        fields = ['id_servicio', 'nombre_servicio', 'descripcion_servicio', 'profesionales', 'servicio_estado']
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Filtrar servicios existentes
-        self.fields['nombre_servicio'] = forms.ModelChoiceField(
-            queryset=Servicio.objects.all(),
-            empty_label="Seleccione un servicio existente",
-            required=False,  # Permite que se deje vacío para crear uno nuevo
-            widget=forms.Select(attrs={'class': 'form-control'})
+        # Campo servicio_estado como un ChoiceField con las opciones definidas
+        self.fields['servicio_estado'] = forms.ChoiceField(
+            choices=self.ESTADOS,
+            widget=forms.Select(attrs={'class': 'form-control'}),
+            required=True  # Cambia según si es obligatorio
         )
 
 

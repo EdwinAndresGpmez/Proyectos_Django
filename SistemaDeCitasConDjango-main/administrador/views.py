@@ -764,46 +764,73 @@ def TipoRol(request):
 # AQUI TENEMOS LAS VISTAS DE PROFESIONAL-------
 
 def lista_profesionales(request):
-    # Asegúrate de definir 'profesionales' al principio
-    profesionales = Profesional.objects.all()  # Esto asegura que 'profesionales' siempre tenga un valor por defecto
-    
     if request.method == 'POST':
         if 'submitProfesional' in request.POST:
             formProfesional = FormProfesional(request.POST)
             if formProfesional.is_valid():
                 try:
-                    formProfesional.save()
+                    # Crear el profesional
+                    nuevo_profesional = formProfesional.save(commit=False)
+                    lugares_seleccionados = formProfesional.cleaned_data.get('lugares')
+                    nuevo_profesional.save()  # Guarda primero el profesional
+                    if lugares_seleccionados:
+                        nuevo_profesional.lugares.set(lugares_seleccionados)  # Relacionar lugares
                     return redirect('lista_profesionales')
                 except IntegrityError:
-                    formProfesional.add_error('numero_documento', 'El número de documento ya existe.')
+                    formProfesional.add_error('num_doc_prof', 'El número de documento ya existe.')
             else:
-                return render(request, 'profesionales.html', {'formProfesional': formProfesional, 'profesionales': profesionales})
-    else:
-        formProfesional = FormProfesional()
-
-    # Se asegura de pasar 'profesionales' a la plantilla en todos los casos
-    context = {
+                return render(request, 'profesionales.html', {
+                    'formProfesional': formProfesional,
+                    'profesionales': Profesional.objects.all(),
+                    'lugares': Lugares.objects.all()
+                })
+    
+    # GET Request
+    formProfesional = FormProfesional()
+    profesionales = Profesional.objects.all()
+    lugares = Lugares.objects.all()
+    lugares_ids = lugares.values_list('id_lugar', flat=True)  # Obtener los ids de los lugares
+    return render(request, 'profesionales.html', {
         'formProfesional': formProfesional,
-        'profesionales': profesionales,  # siempre pasa 'profesionales'
-    }
+        'profesionales': profesionales,
+        'lugares': lugares,
+        'lugares_ids': lugares_ids  # Pasa los IDs de los lugares al contexto
+    })
 
-    return render(request, 'profesionales.html', context)
 
 def editar_profesional(request, id_prof):
     if request.method == 'POST':
-        try:
-            profesional = get_object_or_404(Profesional, pk=id_prof)
-            profesional.nombre_prof = request.POST.get('nombre_prof', profesional.nombre_prof)
-            profesional.especialidad_prof = request.POST.get('especialidad_prof', profesional.especialidad_prof)
-            profesional.email_prof = request.POST.get('email_prof', profesional.email_prof)
-            profesional.telefono_prof = request.POST.get('telefono_prof', profesional.telefono_prof)
-            profesional.estado_prof = request.POST.get('estado_prof', profesional.estado_prof) == "True"
-            profesional.save()
-            return JsonResponse({'status': 'success'})
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)})
+        # Obtener el profesional a editar
+        profesional = get_object_or_404(Profesional, id_prof=id_prof)
+        
+        # Actualizar los campos básicos
+        profesional.nombre_prof = request.POST.get('nombre_prof', profesional.nombre_prof)
+        profesional.especialidad_prof = request.POST.get('especialidad_prof', profesional.especialidad_prof)
+        profesional.email_prof = request.POST.get('email_prof', profesional.email_prof)
+        profesional.telefono_prof = request.POST.get('telefono_prof', profesional.telefono_prof)
+        profesional.estado_prof = request.POST.get('estado_prof') == 'True'  # Convertir a booleano
+
+        # Obtener los lugares seleccionados (IDs enviados desde el formulario)
+        lugares_ids = request.POST.getlist('lugares[]')
+        print("Lugares seleccionados:", lugares_ids)  # Verifica si los lugares están llegando correctamente
+        
+        # Si hay lugares seleccionados, obtenemos los objetos correspondientes
+        if lugares_ids:
+            lugares = Lugares.objects.filter(id_lugar__in=lugares_ids)
+            print("Lugares encontrados:", lugares)  # Verifica si se encuentran correctamente los lugares
+            
+            # Actualizar la relación ManyToMany
+            profesional.lugares.set(lugares)  # Asocia los lugares seleccionados al profesional
+        else:
+            profesional.lugares.clear()  # Si no hay lugares seleccionados, limpia la relación
+
+        # Guardar los cambios
+        profesional.save()
+
+        return JsonResponse({'status': 'success', 'message': 'Profesional editado correctamente.'})
     else:
-        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+        return JsonResponse({'status': 'error', 'message': 'Método no permitido.'})
+
 
 
 def eliminar_profesional(request, id_prof):
@@ -822,6 +849,7 @@ def eliminar_profesional(request, id_prof):
         return JsonResponse({'status': 'success', 'message': 'Profesional eliminado exitosamente.'})
 
     return JsonResponse({'status': 'error', 'message': 'Error al procesar la solicitud.'})
+
 
 # AQUI TENEMOS LAS VISTAS DE LUGAR -------
 
@@ -1008,19 +1036,38 @@ def eliminar_horario(request, id_hora):
 
 # AQUI TENEMOS LAS VISTAS DE LA CREACION DE LOS SEVICIOS -------
 
+
 def lista_servicios(request):
     if request.method == 'POST':
         formServicios = FormServicios(request.POST)
         if formServicios.is_valid():
-            formServicios.save()
-            # Redirige a otra página o haz alguna acción después de guardar
+            # Crear el servicio sin guardar en la base de datos
+            servicio = formServicios.save(commit=False)
+
+            # Obtener los profesionales seleccionados
+            profesionales = formServicios.cleaned_data.get('profesionales')
+
+            # Guardar el servicio
+            servicio.save()
+
+            # Asociar los profesionales seleccionados al servicio
+            servicio.profesionales.set(profesionales)
+
+            # Confirmar éxito
+            messages.success(request, "Servicio creado exitosamente.")
+            return redirect('lista_servicios')
+        else:
+            messages.error(request, "Por favor corrija los errores en el formulario.")
+
     else:
         formServicios = FormServicios()
 
-    # Obtener la lista de servicios
+    # Obtener todos los servicios para mostrar en la plantilla
     servicios = Servicio.objects.all()
-
-    return render(request, 'servicios.html', {'formServicios': formServicios, 'servicios': servicios})
+    return render(request, 'servicios.html', {
+        'formServicios': formServicios,
+        'servicios': servicios,
+    })
 
 def eliminar_servicios(request, id_servicio):
     if request.method == 'POST':
@@ -1040,12 +1087,31 @@ def eliminar_servicios(request, id_servicio):
     return JsonResponse({'status': 'error', 'message': 'Error al procesar la solicitud.'})
 
 def editar_servicios(request, id_servicio):
+    servicio = Servicio.objects.get(id_servicio=id_servicio)
+    profesionales = Profesional.objects.all()  # Obtener todos los profesionales
+
     if request.method == 'POST':
-        servicio = Servicio.objects.get(id_servicio=id_servicio)
+        print("Datos recibidos en POST:")
+        print(f"Nombre Servicio: {request.POST['nombre_servicio']}")
+        print(f"Descripcion Servicio: {request.POST['descripcion_servicio']}")
+        print(f"Estado Servicio: {request.POST['servicio_estado']}")
+
+        # Recoger los profesionales seleccionados
+        nuevos_profesionales = request.POST.getlist('profesionales')  
+        print(f"Profesionales seleccionados: {nuevos_profesionales}")
+
+        # Actualizar los profesionales en el servicio
         servicio.nombre_servicio = request.POST['nombre_servicio']
         servicio.descripcion_servicio = request.POST['descripcion_servicio']
         servicio.servicio_estado = request.POST['servicio_estado']
-        
+
+        servicio.profesionales.set(nuevos_profesionales)
+
         servicio.save()
+
         return JsonResponse({'status': 'success'})
-    return JsonResponse({'status': 'error'})
+
+    return render(request, 'nombre_del_template.html', {
+        'servicio': servicio,
+        'profesionales': profesionales,  # Asegúrate de pasar la lista de profesionales
+    })

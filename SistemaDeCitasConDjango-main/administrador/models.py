@@ -16,13 +16,18 @@ class Profesional(models.Model):
     )
     nombre_prof = models.CharField(max_length=255)
     especialidad_prof = models.CharField(max_length=255)
-    telefono_prof = models.CharField(max_length=15, null=True, blank=True, unique=True,)
-    email_prof = models.EmailField(null=True, blank=True, unique=True,)
+    telefono_prof = models.CharField(max_length=15, null=True, blank=True, unique=True)
+    email_prof = models.EmailField(null=True, blank=True, unique=True)
     estado_prof = models.BooleanField(default=True)
+    lugares = models.ManyToManyField(  
+        'Lugares', 
+        related_name="profesionales", 
+        verbose_name="Lugares Asociados"
+    )
 
     def __str__(self):
-        return self.nombre_prof
-
+        lugares_asociados = ", ".join([lugar.nombre_lugar for lugar in self.lugares.all()])
+        return f"{self.nombre_prof} - Lugares: {lugares_asociados if lugares_asociados else 'Sin lugar asociado'}"
 
 
 
@@ -171,16 +176,10 @@ class Servicio(models.Model):
         verbose_name="Estado Activo"
     )
     profesionales = models.ManyToManyField(
-        'Profesional', 
+        Profesional, 
         blank=True, 
         related_name='servicios', 
         verbose_name="Profesionales Asociados"
-    )
-    lugares = models.ManyToManyField(
-        'Lugares', 
-        blank=True, 
-        related_name='servicios', 
-        verbose_name="Lugares Asociados"
     )
 
     def __str__(self):

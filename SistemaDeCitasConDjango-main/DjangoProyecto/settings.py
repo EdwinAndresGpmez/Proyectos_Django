@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'entrarSistema',
     'usuario',
     'administrador',
-    'programador'
+    'programador',
+    'widget_tweaks',
 ]
 
 MIDDLEWARE = [

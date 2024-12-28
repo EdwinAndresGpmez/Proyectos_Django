@@ -15,47 +15,49 @@
 </head>
 
 <body>
-    {% load custom_filters %}
     <div class="container mt-4">
         <div class="tab-content">
             <!-- Crear Profesional -->
             <div class="tab-pane fade show active">
-                <h1 class="text-center border border-dark p-3 paginas-titulo">
-                    PROFESIONALES
-                </h1>
-                <form method="post">
+                <h1 class="text-center border border-dark p-3 paginas-titulo">PROFESIONALES</h1>
+                {% if messages %}
+                <div class="alert alert-info">
+                    {% for message in messages %}
+                    <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Formulario para crear profesional -->
+                <form method="post" action="{% url 'lista_profesionales' %}">
                     {% csrf_token %}
                     <div class="form-row">
+                        {% load widget_tweaks %}
                         {% for field in formProfesional %}
                         <div class="form-group col-md-6">
-                            <div class="form-group">
-                                {{ field.label_tag }}
-                                {% if field.name == 'estado_prof' %}
-                                <div class="form-check">
-                                    {{ field|add_class:"form-check-input ms-3" }}
-                                </div>
-                                {% else %}
-                                {{ field|add_class:"form-control" }}
-                                {% endif %}
-                                {% if field.help_text %}
-                                <small class="form-text text-muted">{{ field.help_text }}</small>
-                                {% endif %}
-                            </div>
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field|add_class:"form-control" }}
+                            {% if field.help_text %}
+                            <small class="form-text text-muted">{{ field.help_text }}</small>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     </div>
-
-                    <button type="submit" name="submitProfesional" class="btn btn-primary btn-lg btn-block">Guardar
-                        Profesional</button>
+                    <button type="submit" name="submitProfesional" class="btn btn-primary btn-lg btn-block mt-3">
+                        Guardar Profesional
+                    </button>
                 </form>
-                <h4>Lista de Profesionales</h4>
+
+                <!-- Lista de profesionales -->
+                <h4 class="mt-4">Lista de Profesionales</h4>
                 <table class="table table-bordered">
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Numero de documento</th>
+                            <th>Documento</th>
                             <th>Nombre</th>
                             <th>Especialidad</th>
+                            <th>Lugares</th>
                             <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
@@ -67,24 +69,38 @@
                             <td>{{ profesional.num_doc_prof }}</td>
                             <td>{{ profesional.nombre_prof }}</td>
                             <td>{{ profesional.especialidad_prof }}</td>
-                            <td>{{ profesional.estado_prof |yesno:"Activo,Inactivo"}}</td>
+                            <td>
+                                {% if profesional.lugares.exists %}
+                                {% for lugar in profesional.lugares.all %}
+                                {{ lugar.nombre_lugar }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                                {% else %}
+                                Sin lugar asociado
+                                {% endif %}
+                            </td>
+                            <td>{{ profesional.estado_prof|yesno:"Activo,Inactivo" }}</td>
                             <td>
                                 <a href="#" class="btn btn-warning btn-sm editar-profesional"
-                                    data-id="{{ profesional.id_prof }}" data-documento="{{ profesional.num_doc_prof }}"
+                                    data-id="{{ profesional.id_prof }}"
+                                    data-documento="{{ profesional.num_doc_prof }}"
                                     data-nombre="{{ profesional.nombre_prof }}"
-                                    data-estado="{{ profesional.estado_prof }}"
                                     data-especialidad="{{ profesional.especialidad_prof }}"
                                     data-email="{{ profesional.email_prof }}"
-                                    data-telefono="{{ profesional.telefono_prof }}">Editar</a>
+                                    data-telefono="{{ profesional.telefono_prof }}"
+                                    data-estado="{{ profesional.estado_prof }}"
+                                    data-lugares="{% for lugar in profesional.lugares.all %}{{ lugar.id_lugar }}{% if not forloop.last %},{% endif %}{% endfor %}">
+                                    Editar
+                                </a>
                                 <button class="btn btn-danger btn-sm eliminar-profesional"
-                                    data-id="{{ profesional.id_prof }}" data-documento="{{ profesional.num_doc_prof }}"
-                                    data-nombre="{{ profesional.nombre_prof }}"
-                                    data-especialidad="{{ profesional.especialidad_prof }}">Eliminar</button>
+                                    data-id="{{ profesional.id_prof }}"
+                                    data-nombre="{{ profesional.nombre_prof }}">
+                                    Eliminar
+                                </button>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="text-center">No hay profesionales registrados.</td>
+                            <td colspan="7" class="text-center">No hay profesionales registrados.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -93,7 +109,7 @@
         </div>
     </div>
 
-    <!-- Modal de Confirmación -->
+    <!-- Modal de Confirmación de Eliminación -->
     <div class="modal fade" id="modalEliminar" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -105,7 +121,7 @@
                 </div>
                 <div class="modal-body">
                     <p id="mensajeEliminar">¿Estás seguro de que deseas eliminar al profesional <span
-                            id="profNombre"></span> con especialidad <span id="profEspecialidad"></span>?</p>
+                            id="profNombre"></span>?</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
@@ -129,7 +145,7 @@
                     <div class="modal-body">
                         <input type="hidden" id="editarIdProf">
                         <div class="form-group">
-                            <label for="editarNombreProf">Nombre Completo</label>
+                            <label for="editarNombreProf">Nombre</label>
                             <input type="text" class="form-control" id="editarNombreProf" required>
                         </div>
                         <div class="form-group">
@@ -145,9 +161,18 @@
                             <input type="text" class="form-control" id="editarTelefonoProf" required>
                         </div>
                         <div class="form-group">
-                            <label for="editarEstadoProf">Estado profesional</label>
-                            <!-- Campo de estado -->
-                            <select class="form-control" id="editarEstadoProf" required>
+                            <label for="editarLugares">Lugares</label>
+                            <select id="editarLugares" name="lugares[]" multiple>
+                                {% for lugar in lugares %}
+                                    <option value="{{ lugar.id_lugar }}" {% if lugar in profesional.lugares.all %} selected {% endif %}>
+                                        {{ lugar.nombre_lugar }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editarEstadoProf">Estado</label>
+                            <select id="editarEstadoProf" class="form-control" required>
                                 <option value="True">Activo</option>
                                 <option value="False">Inactivo</option>
                             </select>
@@ -166,101 +191,134 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-        $(document).ready(function () {
-            // Mostrar modal de eliminar
-            $('.eliminar-profesional').click(function (e) {
-                e.preventDefault();
-                const idProf = $(this).data('id');
-                const nombreProf = $(this).data('nombre');
-                const especialidadProf = $(this).data('especialidad');
 
-                $('#profNombre').text(nombreProf);
-                $('#profEspecialidad').text(especialidadProf);
-                $('#modalEliminar').modal('show');
+$(document).ready(function () {
+    // Mostrar modal de eliminar
+    $('.eliminar-profesional').click(function (e) {
+        e.preventDefault();
+        const idProf = $(this).data('id');
+        const nombreProf = $(this).data('nombre');
+        const especialidadProf = $(this).data('especialidad');
 
-                $('#confirmarEliminar').off('click').on('click', function () {
-                    $.ajax({
-                        url: "{% url 'eliminar_profesional' 0 %}".replace('0', idProf),
-                        method: 'POST',
-                        data: {
-                            'csrfmiddlewaretoken': '{{ csrf_token }}',
-                            'id_prof': idProf
-                        },
-                        success: function (response) {
-                            if (response.status === 'success') {
-                                $('button[data-id="' + idProf + '"]').closest('tr').remove();
-                                $('#modalEliminar').modal('hide');
-                                alert(response.message);
-                            } else {
-                                alert(response.message);
-                            }
-                        },
-                        error: function () {
-                            alert('Ocurrió un error al intentar eliminar el profesional.');
-                        }
-                    });
-                });
-            });
+        $('#profNombre').text(nombreProf);
+        $('#profEspecialidad').text(especialidadProf);
+        $('#modalEliminar').modal('show');
 
-            // Mostrar modal de edición
-            $('.editar-profesional').click(function (e) {
-                e.preventDefault();
-                const idProf = $(this).data('id');
-                const numDocumen = $(this).data('documento');
-                const nombreProf = $(this).data('nombre');
-                const especialidadProf = $(this).data('especialidad');
-                const emailProf = $(this).data('email');
-                const telefonoProf = $(this).data('telefono');
-                const estadoProf = $(this).data('estado');
-
-                $('#editarIdProf').val(idProf);
-                $('#editarNombreProf').val(nombreProf);
-                $('#editarEspecialidadProf').val(especialidadProf);
-                $('#editarEmailProf').val(emailProf);
-                $('#editarTelefonoProf').val(telefonoProf);
-                $('#editarEstadoProf').val(estadoProf);
-
-                $('#modalEditar').modal('show');
-            });
-
-            // Guardar cambios en el modal de edición
-            $('#formEditarProfesional').submit(function (e) {
-                e.preventDefault();
-
-                const idProf = $('#editarIdProf').val();
-                const data = {
+        $('#confirmarEliminar').off('click').on('click', function () {
+            $.ajax({
+                url: `/eliminar_profesional/${idProf}/`, // Ruta ajustada
+                method: 'POST',
+                data: {
                     'csrfmiddlewaretoken': '{{ csrf_token }}',
-                    'nombre_prof': $('#editarNombreProf').val(),
-                    'especialidad_prof': $('#editarEspecialidadProf').val(),
-                    'email_prof': $('#editarEmailProf').val(),
-                    'telefono_prof': $('#editarTelefonoProf').val(),
-                    'estado_prof': $('#editarEstadoProf').val()
-                };
-
-                $.ajax({
-                    url: "{% url 'editar_profesional' 0 %}".replace('0', idProf),
-                    method: 'POST',
-                    data: data,
-                    success: function (response) {
-                        if (response.status === 'success') {
-
-                            const row = $('a[data-id="' + idProf + '"]').closest('tr');
-                            row.find('td:eq(2)').text(data.nombre_prof);
-                            row.find('td:eq(3)').text(data.especialidad_prof);
-                            row.find('td:eq(4)').text(data.estado_prof === "True" ? "Activo" : "Inactivo");
-
-                            $('#modalEditar').modal('hide');
-                            alert('Profesional editado correctamente.');
-                        } else {
-                            alert('Error al guardar los cambios.');
-                        }
-                    },
-                    error: function () {
-                        alert('Ocurrió un error al intentar editar el profesional.');
+                    'id_prof': idProf
+                },
+                success: function (response) {
+                    if (response.status === 'success') {
+                        $('button[data-id="' + idProf + '"]').closest('tr').remove();
+                        $('#modalEliminar').modal('hide');
+                        alert(response.message);
+                    } else {
+                        alert(response.message);
                     }
-                });
+                },
+                error: function () {
+                    alert('Ocurrió un error al intentar eliminar el profesional.');
+                }
             });
         });
+    });
+
+    // Mostrar modal de edición
+    $('.editar-profesional').click(function (e) {
+    e.preventDefault();
+    const idProf = $(this).data('id');
+    const numDoc = $(this).data('documento');
+    const nombreProf = $(this).data('nombre');
+    const especialidadProf = $(this).data('especialidad');
+    const emailProf = $(this).data('email');
+    const telefonoProf = $(this).data('telefono');
+    const lugares = $(this).data('lugares'); // Lista de lugares (posiblemente un string o un array)
+    const estado = $(this).data('estado'); // Estado (Activo/Inactivo)
+
+    // Rellenar los campos del modal
+    $('#editarIdProf').val(idProf);
+    $('#editarNombreProf').val(nombreProf);
+    $('#editarEspecialidadProf').val(especialidadProf);
+    $('#editarEmailProf').val(emailProf);
+    $('#editarTelefonoProf').val(telefonoProf);
+    
+    // Establecer estado como booleano
+    $('#editarEstadoProf').val(estado);
+
+    // Preseleccionar lugares en el <select multiple>
+    const lugarSelect = $('#editarLugares');
+    lugarSelect.val(null);  // Limpiar selecciones previas
+    
+    // Si lugares es un string (lista separada por comas), convertirlo a un array
+    if (typeof lugares === 'string') {
+        const lugarArray = lugares.split(',');  // Convertir la lista a un array
+        lugarSelect.val(lugarArray);  // Seleccionar los valores
+    } else if (Array.isArray(lugares)) {
+        lugarSelect.val(lugares);  // Si ya es un array, solo asignarlo directamente
+    }
+
+    $('#modalEditar').modal('show');  // Mostrar el modal
+});
+
+// Enviar los datos del formulario de edición
+$('#formEditarProfesional').submit(function (e) {
+    e.preventDefault();
+
+    const idProf = $('#editarIdProf').val();
+    const data = {
+        'csrfmiddlewaretoken': '{{ csrf_token }}',
+        'nombre_prof': $('#editarNombreProf').val(),
+        'especialidad_prof': $('#editarEspecialidadProf').val(),
+        'email_prof': $('#editarEmailProf').val(),
+        'telefono_prof': $('#editarTelefonoProf').val(),
+        'lugares': $('#editarLugares').val(),  // Array de lugares seleccionados
+        'estado_prof': $('#editarEstadoProf').val()
+        
+    };
+    console.log('Datos enviados:', data);  // Verifica los valores enviados
+    console.log('Lugares seleccionados:', $('#editarLugares').val());
+
+    $.ajax({
+        url: "{% url 'editar_profesional' 0 %}".replace('0', idProf),
+        method: 'POST',
+        data: data,
+        success: function (response) {
+            if (response.status === 'success') {
+                // Actualizar la tabla con los nuevos datos
+                const row = $('a[data-id="' + idProf + '"]').closest('tr');
+                row.find('td:eq(2)').text(data.nombre_prof);
+                row.find('td:eq(3)').text(data.especialidad_prof);
+                row.find('td:eq(5)').text(data.estado_prof === "True" ? "Activo" : "Inactivo");
+
+                // Obtener los nombres de los lugares seleccionados
+                const lugaresNombres = $('#editarLugares option:selected').map(function() {
+                    return $(this).text();
+                }).get().join(', ');
+
+                row.find('td:eq(4)').text(lugaresNombres);
+
+                $('#modalEditar').modal('hide');
+                alert('Profesional editado correctamente.');
+            } else {
+                alert('Error al guardar los cambios.');
+            }
+        },
+        error: function () {
+            alert('Ocurrió un error al intentar editar el profesional.');
+        }
+    });
+});
+
+
+});
+
+   
+
     </script>
 </body>
 
