@@ -91,6 +91,7 @@ urlpatterns = [
       path('get_horas/', usuario_views.get_horas, name='get_horas'),
       path('get_lugares/', usuario_views.get_lugares, name='get_lugares'),
       path('horarios/', administrador_views.lista_horario, name='lista_horario'),
+      path('cargar_horario/', administrador_views.cargar_horario, name='cargar_horario'),
 
      
 ]
