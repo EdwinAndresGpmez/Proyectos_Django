@@ -1041,42 +1041,38 @@ def lista_servicios(request):
     if request.method == 'POST':
         formServicios = FormServicios(request.POST)
         if formServicios.is_valid():
-            # Verificar si ya existe un servicio con el mismo nombre
-            nombre_servicio = formServicios.cleaned_data.get('nombre_servicio')
-            if Servicio.objects.filter(nombre_servicio=nombre_servicio).exists():
-                messages.error(
-                    request, 
-                    f"El servicio con el nombre '{nombre_servicio}' ya existe. Por favor, elige otro nombre."
-                )
-            else:
-                # Crear el servicio sin guardar aún en la base de datos
-                servicio = formServicios.save(commit=False)
-                # Obtener los profesionales seleccionados
-                profesionales = formServicios.cleaned_data.get('profesionales')
-                # Guardar el servicio
-                servicio.save()
-                # Asociar los profesionales seleccionados al servicio
-                servicio.profesionales.set(profesionales)
-                # Confirmar éxito
-                messages.success(request, "Servicio creado exitosamente.")
-                return redirect('lista_servicios')
+            # Crear el servicio sin guardar en la base de datos
+            servicio = formServicios.save(commit=False)
+
+            # Obtener los profesionales seleccionados
+            profesionales = formServicios.cleaned_data.get('profesionales')
+
+            # Guardar el servicio
+            servicio.save()
+
+            # Asociar los profesionales seleccionados al servicio
+            servicio.profesionales.set(profesionales)
+
+            # Confirmar éxito
+            messages.success(request, "Servicio creado exitosamente.")
+            return redirect('lista_servicios')
         else:
-            # Si el formulario no es válido, mostrar errores
             messages.error(request, "Por favor corrija los errores en el formulario.")
+
     else:
-        # Si es GET, instanciar un formulario vacío
         formServicios = FormServicios()
 
-    # Obtener todos los servicios y profesionales para mostrarlos en la plantilla
-    servicios = Servicio.objects.prefetch_related('profesionales').all()
-    profesionales = Profesional.objects.all()
+    # Obtener todos los servicios para mostrar en la plantilla
+    servicios = Servicio.objects.all()
+
+    # Obtener todos los profesionales para mostrar en el formulario
+    profesionales = Profesional.objects.all()  # O ajusta la consulta si necesitas filtros
 
     return render(request, 'servicios.html', {
         'formServicios': formServicios,
         'servicios': servicios,
-        'profesionales': profesionales,
+        'profesionales': profesionales,  # Pasamos la lista de profesionales
     })
-
 
 
 def eliminar_servicios(request, id_servicio):

@@ -178,12 +178,6 @@ class FormServicios(forms.ModelForm):
         )
     profesionales = forms.ModelMultipleChoiceField(queryset=Profesional.objects.all(), required=False)
 
-    def clean_nombre_servicio(self):
-        nombre_servicio = self.cleaned_data.get('nombre_servicio')
-        if Servicio.objects.filter(nombre_servicio=nombre_servicio).exists():
-            raise forms.ValidationError(f"El servicio con el nombre '{nombre_servicio}' ya existe.")
-        return nombre_servicio
-
 
 class CargarHorarioArchivoForm(forms.Form):
     archivo = forms.FileField(label="Subir archivo CSV o XLSX")
