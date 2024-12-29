@@ -267,20 +267,29 @@ def cita(request):
     
 def get_lugares(request):
     id_servicio = request.GET.get('id_servicio')
+    print(f"ID del servicio recibido: {id_servicio}")
 
     if id_servicio:
-        # Filtrar lugares asociados al servicio con el estado activo
-        lugares = modelsAdministrador.Lugares.objects.filter(
-            servicios__id_servicio=id_servicio,  # Usar la relación ManyToMany
-            lugares_estado=True  # Verificar que el lugar esté activo
-        )
+        try:
+            # Filtrar lugares a través de los profesionales asociados al servicio
+            lugares = modelsAdministrador.Lugares.objects.filter(
+                profesionales__servicios__id_servicio=id_servicio,
+                lugares_estado=True
+            ).distinct()
 
-        # Construir la respuesta
-        data = [{'id_lugar': l.id_lugar, 'nombre_lugar': l.nombre_lugar} for l in lugares]
+            print(f"Lugares encontrados: {[lugar.nombre_lugar for lugar in lugares]}")
+        except Exception as e:
+            print(f"Error al realizar la consulta: {e}")
+            lugares = []
+
+        # Construir la respuesta en formato JSON
+        data = [{'id_lugar': lugar.id_lugar, 'nombre_lugar': lugar.nombre_lugar} for lugar in lugares]
     else:
+        print("No se proporcionó un ID de servicio")
         data = []
 
     return JsonResponse(data, safe=False)
+
 
 
     
