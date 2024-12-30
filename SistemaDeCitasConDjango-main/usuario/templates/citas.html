@@ -65,7 +65,6 @@
             </tr>
 
             <!-- Campo: Hora -->
-
             <tr>
                 <td><label for="hora">Hora de la cita</label></td>
                 <td>
@@ -82,14 +81,16 @@
                     <textarea class="form-control" id="nota_cit" name="nota_cit" rows="3" placeholder="Escribe una nota para la cita..." style="resize: none;"></textarea>
                 </td>
             </tr>
+            
+            <!-- Campo: Lugar de la cita -->
             <tr>
-                <td><label for="lugares">lugar de la cita</label></td>
+                <td><label for="lugares">Lugar de la cita</label></td>
                 <td>
                     <select class="form-control" id="lugares" name="id_lugar" required>
                         <option value="" selected>Este es su lugar de cita</option> 
                         {% if listaLugares %}
                             {% for lugares in listaLugares %}
-                                <option value="{{ lugares.lugares}}">{{ lugares.nombre_lugar }}</option>
+                                <option value="{{ lugares.id_lugar }}">{{ lugares.nombre_lugar }}</option>
                             {% endfor %}
                         {% else %}
                             <option value="">No hay lugar</option>
@@ -97,22 +98,38 @@
                     </select>
                 </td>
             </tr>
-            {% if form.id_hora.errors %}
-        <div class="alert alert-danger" role="alert">
-            {% for error in form.id_hora.errors %}
-                <p>{{ error }}</p>
-            {% endfor %}
-        </div>
-    {% endif %}
 
-    <!-- Mostrar errores globales -->
-    {% if messages %}
-        <div class="alert alert-danger">
-            {% for message in messages %}
-                <p>{{ message }}</p>
-            {% endfor %}
-        </div>
-    {% endif %}
+            <!-- Mostrar errores en el campo 'hora' -->
+            {% if form.id_hora.errors %}
+            <div class="alert alert-danger" role="alert">
+                {% for error in form.id_hora.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Mostrar errores globales -->
+            {% if messages %}
+                <div class="alert-container">
+                    {% for message in messages %}
+                        {% if 'success' in message.tags %}
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        {% elif 'error' in message.tags %}
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
 
             <!-- Botón: Crear Cita -->
             <tr>
@@ -152,40 +169,44 @@
             profesionalSelect.innerHTML = '<option value="">Selecciona un servicio primero</option>';
         }
     });
+
     document.getElementById('dia').addEventListener('change', function() {
-        const profesionalId = document.getElementById('profesional').value;
-        const diaCit = this.value;  // Fecha seleccionada
-        const horasSelect = document.getElementById('hora');
+    const diaCit = this.value;  // Fecha seleccionada
+    const profesionalId = document.getElementById('profesional').value;
+    const horasSelect = document.getElementById('hora');
     
-        if (profesionalId && diaCit) {
-            fetch(`/get_horas/?id_prof=${profesionalId}&dia_cit=${diaCit}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Error al cargar las horas');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    horasSelect.innerHTML = ''; // Limpia las opciones
-                    if (data.length > 0) {
-                        // Si hay horas disponibles, agregarlas al select
-                        horasSelect.innerHTML = '<option value="">Seleccione una Hora</option>';
-                        data.forEach(item => {
-                            horasSelect.innerHTML += `<option value="${item.id_hora}">${item.rango_horas}</option>`;
-                        });
-                    } else {
-                        // Si no hay horas disponibles, mostrar el mensaje
-                        horasSelect.innerHTML = '<option value="">No hay horas disponibles para esa fecha</option>';
-                    }
-                })
-                .catch(error => {
-                    console.error(error);
-                    horasSelect.innerHTML = '<option value="">Error al cargar las horas</option>';
-                });
-        } else {
-            horasSelect.innerHTML = '<option value="">Selecciona un profesional y una fecha primero</option>';
-        }
-    });
+    // Validar que se haya seleccionado un profesional y una fecha
+    if (profesionalId && diaCit) {
+        fetch(`/get_horas/?id_prof=${profesionalId}&dia_cit=${diaCit}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al cargar las horas');
+                }
+                return response.json();
+            })
+            .then(data => {
+                horasSelect.innerHTML = ''; // Limpia las opciones
+                if (data.length > 0) {
+                    // Si hay horas disponibles, agregarlas al select
+                    horasSelect.innerHTML = '<option value="">Seleccione una Hora</option>';
+                    data.forEach(item => {
+                        horasSelect.innerHTML += `<option value="${item.id_hora}">${item.rango_horas}</option>`;
+                    });
+                } else {
+                    // Si no hay horas disponibles, mostrar el mensaje
+                    horasSelect.innerHTML = '<option value="">No hay horas disponibles para esa fecha</option>';
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                horasSelect.innerHTML = '<option value="">Error al cargar las horas</option>';
+            });
+    } else {
+        horasSelect.innerHTML = '<option value="">Selecciona un profesional y una fecha primero</option>';
+    }
+});
+
+
     document.getElementById('servicio').addEventListener('change', function() {
         const servicioId = this.value;
         const lugaresSelect = document.getElementById('lugares');
@@ -212,5 +233,4 @@
             lugaresSelect.innerHTML = '<option value="">Selecciona un servicio primero</option>';
         }
     });
-    
 </script>

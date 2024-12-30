@@ -120,9 +120,6 @@ def deleteCita_historial(request, id_cit):
         # fin de trigger ------
         return redirect('inicio')
 
-
-
-
 def cita(request):
     user = request.user
     if not user.is_authenticated:
@@ -290,10 +287,6 @@ def get_lugares(request):
 
     return JsonResponse(data, safe=False)
 
-
-
-    
-    
 def get_profesionales(request):
     id_servicio = request.GET.get('id_servicio')
     
@@ -312,22 +305,40 @@ def get_horas(request):
     id_prof = request.GET.get('id_prof')  # ID del profesional
     dia_cit = request.GET.get('dia_cit')  # Fecha seleccionada
 
+    print(f"ID del profesional recibido: {id_prof}")  # Debug: Verificar ID del profesional
+    print(f"Fecha seleccionada recibida: {dia_cit}")   # Debug: Verificar fecha seleccionada
+
     try:
         # Validar si el profesional está activo
         profesional = modelsAdministrador.Profesional.objects.get(id_prof=id_prof, estado_prof=True)
+        print(f"Profesional encontrado: {profesional}")  # Debug: Profesional encontrado
 
         # Convertir la fecha de string a objeto de fecha
         fecha = parse_date(dia_cit)
+        print(f"Fecha convertida: {fecha}")  # Debug: Fecha convertida
 
         if not fecha:
+            print("Error: Fecha inválida")  # Debug: Fecha inválida
             return JsonResponse({'error': 'Fecha inválida'}, status=400)
 
-        # Filtrar las horas asociadas al profesional y disponibles en la fecha
-        horas = modelsAdministrador.Horas.objects.filter(
+        # Filtrar las horas ocupadas por citas existentes con las condiciones dadas
+        horas_ocupadas = Citas.objects.filter(
+            id_prof=profesional,
+            dia_cit=fecha,
+            citas_estado=True,
+            estado_cita__in=["Aceptada", "Sin confirmar", "Realizadas"]
+        ).values_list('id_hora', flat=True)
+
+        print(f"Horas ocupadas: {horas_ocupadas}")  # Debug: Lista de horas ocupadas
+
+        # Filtrar las horas disponibles
+        horas_disponibles = modelsAdministrador.Horas.objects.filter(
             id_prof=profesional,
             horas_estado=True,          # Solo horas activas
             fecha_habilitada=fecha      # Solo para la fecha seleccionada
-        )
+        ).exclude(id_hora__in=horas_ocupadas)
+
+        print(f"Horas disponibles: {horas_disponibles}")  # Debug: Lista de horas disponibles
 
         # Construir la respuesta con el rango de horas
         data = [
@@ -335,13 +346,16 @@ def get_horas(request):
                 'id_hora': h.id_hora,
                 'rango_horas': f"{h.inicio_hora.strftime('%H:%M')} a {h.final_hora.strftime('%H:%M')}"
             }
-            for h in horas
+            for h in horas_disponibles
         ]
+        print(f"Respuesta construida: {data}")  # Debug: Respuesta final
     except modelsAdministrador.Profesional.DoesNotExist:
         # Si no existe el profesional o no está activo, devolver lista vacía
+        print("Profesional no encontrado o no activo")  # Debug: Profesional no encontrado o inactivo
         data = []
 
     return JsonResponse(data, safe=False)
+
 
 
 def historial(request):
