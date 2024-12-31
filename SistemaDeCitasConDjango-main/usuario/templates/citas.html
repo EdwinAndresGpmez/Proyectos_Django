@@ -3,234 +3,187 @@
 <!-- Plantilla de la cabecera de la página -->
 {% include "cabecera-usuario.html" %}
 
-<!-- Título de la página -->
-<h1 class="text-center border border-dark p-3 paginas-titulo">
-    Crear Cita
-</h1>
-
-<!-- Línea separadora -->
-<hr />
-
 <!-- Contenedor principal -->
-<h3 class="text-center">Selecciona los datos de la cita</h3>
+<div class="container my-5">
+    <!-- Título principal -->
+    <div class="text-center mb-4">
+        <h1 class="display-4 text-primary fw-bold">Crear Cita</h1>
+        <p class="text-muted">Selecciona los datos para programar tu cita</p>
+    </div>
 
-<!-- Formulario de creación de cita -->
-<form action="{% url 'cita' %}" method="POST" class="form">
-    {% csrf_token %}
-    <input type="hidden" name="id_usu" value="{{ request.user.id }}">
-    <input type="hidden" name="cita_estado" value="True">
-    <input type="hidden" name="id_pac" value="{{ request.user.paciente_id}}">
+    <!-- Card para el formulario -->
+    <div class="card shadow-lg border-0">
+        <div class="card-body p-5">
+            <form action="{% url 'cita' %}" method="POST" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="id_usu" value="{{ request.user.id }}">
+                <input type="hidden" name="cita_estado" value="True">
+                <input type="hidden" name="id_pac" value="{{ request.user.paciente_id }}">
 
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th scope="col">Datos de la cita</th>
-                <th scope="col">Disponibilidad de citas</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Campo: Servicio -->
-            <tr>
-                <td><label for="servicio">Servicio</label></td>
-                <td>
-                    <select class="form-control" id="servicio" name="id_servicio" required>
-                        <option value="" selected>Elige un servicio</option> <!-- Mensaje por defecto -->
-                        {% if listaServicios %}
-                            {% for servicio in listaServicios %}
-                                <option value="{{ servicio.id_servicio }}">{{ servicio.nombre_servicio }}</option>
-                            {% endfor %}
-                        {% else %}
-                            <option value="">No hay servicios disponibles</option>
-                        {% endif %}
-                    </select>
-                </td>
-            </tr>
-        
-            <!-- Campo: Profesional -->
-            <tr>
-                <td><label for="profesional">Profesional</label></td>
-                <td>
-                    <select class="form-control" id="profesional" name="id_prof" required>
-                        <option value="">Selecciona un servicio primero</option>
-                    </select>
-                </td>
-            </tr>
-
-            <!-- Campo: Día de la cita -->
-            <tr>
-                <td><label for="dia">Día de la cita</label></td>
-                <td>
-                    <input class="form-control" type="date" id="dia" name="dia_cit" required>
-                </td>
-            </tr>
-
-            <!-- Campo: Hora -->
-            <tr>
-                <td><label for="hora">Hora de la cita</label></td>
-                <td>
-                    <select class="form-control" id="hora" name="id_hora" required>
-                        <option value="">Selecciona una fecha Primero</option>
-                    </select>
-                </td>
-            </tr>
-           
-            <!-- Campo: Nota -->
-            <tr>
-                <td><label for="nota">Nota/Descripción</label></td>
-                <td>
-                    <textarea class="form-control" id="nota_cit" name="nota_cit" rows="3" placeholder="Escribe una nota para la cita..." style="resize: none;"></textarea>
-                </td>
-            </tr>
-            
-            <!-- Campo: Lugar de la cita -->
-            <tr>
-                <td><label for="lugares">Lugar de la cita</label></td>
-                <td>
-                    <select class="form-control" id="lugares" name="id_lugar" required>
-                        <option value="" selected>Este es su lugar de cita</option> 
-                        {% if listaLugares %}
-                            {% for lugares in listaLugares %}
-                                <option value="{{ lugares.id_lugar }}">{{ lugares.nombre_lugar }}</option>
-                            {% endfor %}
-                        {% else %}
-                            <option value="">No hay lugar</option>
-                        {% endif %}
-                    </select>
-                </td>
-            </tr>
-
-            <!-- Mostrar errores en el campo 'hora' -->
-            {% if form.id_hora.errors %}
-            <div class="alert alert-danger" role="alert">
-                {% for error in form.id_hora.errors %}
-                    <p>{{ error }}</p>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- Mostrar errores globales -->
-            {% if messages %}
-                <div class="alert-container">
+                <!-- Progreso -->
+                <div class="progress mb-4" style="height: 20px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar"
+                        style="width: 40%;">
+                        Paso 1: Datos básicos
+                    </div>
+                </div>
+                {% if messages %}
+                <div class="container mt-4">
                     {% for message in messages %}
-                        {% if 'success' in message.tags %}
-                            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                        {% elif 'error' in message.tags %}
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                        {% endif %}
+                    <div class="alert alert-{{ message.tags }} text-center py-4" role="alert"
+                        style="font-size: 1.5rem;">
+                        {{ message }}
+                    </div>
                     {% endfor %}
                 </div>
-            {% endif %}
+                {% endif %}
 
-            <!-- Botón: Crear Cita -->
-            <tr>
-                <td colspan="2" class="text-center">
-                    <input type="submit" value="Crear Cita" class="btn btn-success">
-                </td>
-            </tr>
-        </tbody>
-    </table>
-</form>
 
-<!-- Script para actualizar profesionales según el servicio -->
+                <!-- Fila: Servicio y Profesional -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="servicio" class="form-label fw-bold">Servicio</label>
+                        <select class="form-select" id="servicio" name="id_servicio" required>
+                            <option value="" selected>Selecciona un servicio</option>
+                            {% if listaServicios %}
+                            {% for servicio in listaServicios %}
+                            <option value="{{ servicio.id_servicio }}">{{ servicio.nombre_servicio }}</option>
+                            {% endfor %}
+                            {% else %}
+                            <option value="">No hay servicios disponibles</option>
+                            {% endif %}
+                        </select>
+                        <div class="invalid-feedback">Por favor selecciona un servicio.</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="profesional" class="form-label fw-bold">Profesional</label>
+                        <select class="form-select" id="profesional" name="id_prof" required>
+                            <option value="">Selecciona un servicio primero</option>
+                        </select>
+                        <div class="invalid-feedback">Por favor selecciona un profesional.</div>
+                    </div>
+                </div>
+
+                <!-- Fila: Fecha y Hora -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="dia" class="form-label fw-bold">Fecha</label>
+                        <input type="date" class="form-control" id="dia" name="dia_cit" required>
+                        <div class="invalid-feedback">Por favor selecciona una fecha válida.</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="hora" class="form-label fw-bold">Hora</label>
+                        <select class="form-select" id="hora" name="id_hora" required>
+                            <option value="">Selecciona una fecha primero</option>
+                        </select>
+                        <div class="invalid-feedback">Por favor selecciona una hora.</div>
+                    </div>
+                </div>
+
+                <!-- Lugar de la cita -->
+                <div class="mb-4">
+                    <label for="lugares" class="form-label fw-bold">Lugar de la cita</label>
+                    <select class="form-select" id="lugares" name="id_lugar" required>
+                        <option value="" selected>Selecciona un lugar</option>
+                        {% if listaLugares %}
+                        {% for lugares in listaLugares %}
+                        <option value="{{ lugares.id_lugar }}">{{ lugares.nombre_lugar }}</option>
+                        {% endfor %}
+                        {% else %}
+                        <option value="">No hay lugares disponibles</option>
+                        {% endif %}
+                    </select>
+                    <div class="invalid-feedback">Por favor selecciona un lugar.</div>
+                </div>
+
+                <!-- Nota -->
+                <div class="mb-4">
+                    <label for="nota_cit" class="form-label fw-bold">Nota/Descripción</label>
+                    <textarea class="form-control" id="nota_cit" name="nota_cit" rows="3"
+                        placeholder="Escribe una nota para la cita..." style="resize: none;"></textarea>
+                </div>
+
+                <!-- Botón de envío -->
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-calendar-check me-2"></i>Crear Cita
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Mensajes de error -->
+    {% if messages %}
+    <div class="mt-4">
+        {% for message in messages %}
+        {% if 'success' in message.tags %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>{{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% elif 'error' in message.tags %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>{{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Scripts dinámicos -->
 <script>
-    document.getElementById('servicio').addEventListener('change', function() {
+    document.getElementById('servicio').addEventListener('change', function () {
         const servicioId = this.value;
         const profesionalSelect = document.getElementById('profesional');
-
-        if (servicioId) {
-            fetch(`{% url 'get_profesionales' %}?id_servicio=${servicioId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Error al cargar los profesionales');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    profesionalSelect.innerHTML = '<option value="">Seleccione un profesional</option>';
-                    data.forEach(item => {
-                        profesionalSelect.innerHTML += `<option value="${item.id_prof}">${item.nombre_prof}</option>`;
-                    });
-                })
-                .catch(error => {
-                    console.error(error);
-                    profesionalSelect.innerHTML = '<option value="">Error al cargar los profesionales</option>';
-                });
-        } else {
-            profesionalSelect.innerHTML = '<option value="">Selecciona un servicio primero</option>';
-        }
-    });
-
-    document.getElementById('dia').addEventListener('change', function() {
-    const diaCit = this.value;  // Fecha seleccionada
-    const profesionalId = document.getElementById('profesional').value;
-    const horasSelect = document.getElementById('hora');
-    
-    // Validar que se haya seleccionado un profesional y una fecha
-    if (profesionalId && diaCit) {
-        fetch(`/get_horas/?id_prof=${profesionalId}&dia_cit=${diaCit}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Error al cargar las horas');
-                }
-                return response.json();
-            })
-            .then(data => {
-                horasSelect.innerHTML = ''; // Limpia las opciones
-                if (data.length > 0) {
-                    // Si hay horas disponibles, agregarlas al select
-                    horasSelect.innerHTML = '<option value="">Seleccione una Hora</option>';
-                    data.forEach(item => {
-                        horasSelect.innerHTML += `<option value="${item.id_hora}">${item.rango_horas}</option>`;
-                    });
-                } else {
-                    // Si no hay horas disponibles, mostrar el mensaje
-                    horasSelect.innerHTML = '<option value="">No hay horas disponibles para esa fecha</option>';
-                }
-            })
-            .catch(error => {
-                console.error(error);
-                horasSelect.innerHTML = '<option value="">Error al cargar las horas</option>';
-            });
-    } else {
-        horasSelect.innerHTML = '<option value="">Selecciona un profesional y una fecha primero</option>';
-    }
-});
-
-
-    document.getElementById('servicio').addEventListener('change', function() {
-        const servicioId = this.value;
         const lugaresSelect = document.getElementById('lugares');
 
         if (servicioId) {
-            fetch(`{% url 'get_lugares' %}?id_servicio=${servicioId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Error al cargar los consultorios');
-                    }
-                    return response.json();
-                })
+            // Cargar profesionales
+            fetch(`{% url 'get_profesionales' %}?id_servicio=${servicioId}`)
+                .then(response => response.json())
                 .then(data => {
-                    lugaresSelect.innerHTML = '<option value="">Seleccione un consultorio</option>';
+                    profesionalSelect.innerHTML = '<option value="">Selecciona un profesional</option>';
+                    data.forEach(item => {
+                        profesionalSelect.innerHTML += `<option value="${item.id_prof}">${item.nombre_prof}</option>`;
+                    });
+                });
+
+            // Cargar lugares
+            fetch(`{% url 'get_lugares' %}?id_servicio=${servicioId}`)
+                .then(response => response.json())
+                .then(data => {
+                    lugaresSelect.innerHTML = '<option value="">Selecciona un lugar</option>';
                     data.forEach(item => {
                         lugaresSelect.innerHTML += `<option value="${item.id_lugar}">${item.nombre_lugar}</option>`;
                     });
-                })
-                .catch(error => {
-                    console.error(error);
-                    lugaresSelect.innerHTML = '<option value="">Error al cargar el consultorio</option>';
                 });
         } else {
+            profesionalSelect.innerHTML = '<option value="">Selecciona un servicio primero</option>';
             lugaresSelect.innerHTML = '<option value="">Selecciona un servicio primero</option>';
+        }
+    });
+
+    document.getElementById('dia').addEventListener('change', function () {
+        const diaCit = this.value;
+        const profesionalId = document.getElementById('profesional').value;
+        const horasSelect = document.getElementById('hora');
+
+        if (profesionalId && diaCit) {
+            fetch(`/get_horas/?id_prof=${profesionalId}&dia_cit=${diaCit}`)
+                .then(response => response.json())
+                .then(data => {
+                    horasSelect.innerHTML = '<option value="">Selecciona una hora</option>';
+                    data.forEach(item => {
+                        horasSelect.innerHTML += `<option value="${item.id_hora}">${item.rango_horas}</option>`;
+                    });
+                });
+        } else {
+            horasSelect.innerHTML = '<option value="">Selecciona un profesional y una fecha primero</option>';
         }
     });
 </script>

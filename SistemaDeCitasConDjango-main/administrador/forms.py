@@ -74,7 +74,7 @@ class FormHoras(forms.ModelForm):
 
     def clean(self):
         """
-        Validación personalizada para evitar duplicados desde el formulario.
+        Validación personalizada para evitar duplicados desde el formulario, asegurando que no haya solapamientos.
         """
         cleaned_data = super().clean()
         inicio_hora = cleaned_data.get('inicio_hora')
@@ -83,19 +83,26 @@ class FormHoras(forms.ModelForm):
         num_doc_prof = cleaned_data.get('num_doc_prof')
 
         if num_doc_prof:
+            # Buscar al profesional con el número de documento
             profesional = Profesional.objects.filter(num_doc_prof=num_doc_prof).first()
-            if Horas.objects.filter(
-                inicio_hora=inicio_hora,
-                final_hora=final_hora,
-                fecha_habilitada=fecha_habilitada,
-                id_prof=profesional
-            ).exclude(pk=self.instance.pk).exists():
-                self.add_error(
-                None,
-                "Ya existe un horario con las mismas características para este profesional."
-            )
+
+            if profesional:
+                # Verificar si ya hay un horario que se solape
+                horarios_ocupados = Horas.objects.filter(
+                    fecha_habilitada=fecha_habilitada,
+                    id_prof=profesional
+                )
+
+                for horario in horarios_ocupados:
+                    # Verificar si el nuevo horario se solapa con algún horario existente
+                    if (inicio_hora < horario.final_hora and final_hora > horario.inicio_hora):
+                        self.add_error(
+                            None,
+                            "Ya existe horario registrado para esta franja de fecha y hora."
+                        )
 
         return cleaned_data
+
 
     def save(self, commit=True):
         instance = super().save(commit=False)
