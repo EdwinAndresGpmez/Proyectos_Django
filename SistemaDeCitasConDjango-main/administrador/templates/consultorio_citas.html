@@ -223,19 +223,30 @@ así que transforme el archivo a PHP -->
 {% endif %}
 
 <script>
-    var nacimiento = document.getElementById('nacimiento_hidden').value;
-    var today = new Date();
-    var date = new Date(nacimiento);
-    var difference = Math.floor((today - date) / (1000 * 60 * 60 * 24 * 365));
+document.addEventListener("DOMContentLoaded", function () {
+    var nacimientoElement = document.getElementById('nacimiento_hidden');
+    if (nacimientoElement) {
+        var nacimiento = nacimientoElement.value;
+        var today = new Date();
+        var date = new Date(nacimiento);
+        var difference = Math.floor((today - date) / (1000 * 60 * 60 * 24 * 365));
+        document.getElementById('nacimiento_pac').placeholder = difference;
+    } else {
+        console.error("El elemento 'nacimiento_hidden' no existe.");
+    }
 
-    document.getElementById('nacimiento_pac').placeholder = difference;
+    var nacimientoConElement = document.getElementById('nacimiento_con_hidden');
+    if (nacimientoConElement) {
+        var nacimientoCon = nacimientoConElement.value;
+        var today = new Date();
+        var dateCon = new Date(nacimientoCon);
+        var differenceCon = Math.floor((today - dateCon) / (1000 * 60 * 60 * 24 * 365));
+        document.getElementById('nacimiento_con').placeholder = differenceCon;
+    } else {
+        console.error("El elemento 'nacimiento_con_hidden' no existe.");
+    }
+});
 
-    var nacimiento = document.getElementById('nacimiento_con_hidden').value;
-    var today = new Date();
-    var date = new Date(nacimiento);
-    var difference = Math.floor((today - date) / (1000 * 60 * 60 * 24 * 365));
-
-    document.getElementById('nacimiento_con').placeholder = difference;
 </script>
 
 

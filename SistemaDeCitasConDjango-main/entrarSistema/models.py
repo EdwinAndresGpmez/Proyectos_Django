@@ -64,9 +64,8 @@ class CrearCuenta(AbstractBaseUser):
 
     usuario_estado = models.BooleanField(default=True, null=True)
 
-    USERNAME_FIELD = 'username'  # LOGIN
-    REQUIRED_FIELDS = ['nombre', 'correo',
-                       'nacionalidad', 'cedula', 'numero']  # REGISTER
+    USERNAME_FIELD = 'cedula'  # LOGIN
+    REQUIRED_FIELDS = ['username', 'nombre', 'correo', 'nacionalidad', 'numero']  # REGISTER
 
     objects = ControladorCrearCuenta()
 

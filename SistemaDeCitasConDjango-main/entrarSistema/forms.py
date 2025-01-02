@@ -11,21 +11,25 @@ User = get_user_model()
 
 class FormIniciar(forms.Form):
 
+    # Inicializamos el formulario
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.fields['username'].widget.attrs.update({
+        # Configuración del campo 'cedula'
+        self.fields['cedula'].widget.attrs.update({
             'type': 'text',
             'class': 'form-control',
-            'placeholder': 'Ingresar nombre de usuario',
+            'placeholder': 'Ingresar cédula',
             'onkeypress': 'return SoloLetrasYNumerosYGuiones(event);',
             'onpaste': 'return false;',
             'minlength': '3',
             'maxlength': '30',
             'required': 'true',
-            'name': 'username',
-            'id': 'username',
-        }),
+            'name': 'cedula',  # Cambiado de 'username' a 'cedula'
+            'id': 'cedula',
+        })
+        
+        # Configuración del campo 'password'
         self.fields['password'].widget.attrs.update({
             'class': 'form-control',
             'placeholder': 'Ingresar contraseña',
@@ -38,21 +42,29 @@ class FormIniciar(forms.Form):
             'id': 'password',
         })
 
-    username = forms.CharField()
+    # Declaración de los campos
+    cedula = forms.CharField(max_length=255)
     password = forms.CharField(widget=forms.PasswordInput)
 
-    class Meta():
-        model = User
-        fields = ('username', 'password')
+    class Meta:
+        model = User  # Puede cambiar a CrearCuenta si usas este modelo personalizado
+        fields = ('cedula', 'password')
 
+    # Lógica de validación personalizada
     def clean(self):
-        if self.is_valid():
-            username = self.cleaned_data['username']
-            password = self.cleaned_data['password']
-            if not authenticate(username=username, password=password):
-                raise forms.ValidationError(
-                    {'password': ["Los datos suministrados no existen."]})
+        cleaned_data = super().clean()
+        cedula = cleaned_data.get('cedula')
+        password = cleaned_data.get('password')
 
+        # Verificamos si la cédula y la contraseña son correctos
+        user = authenticate(cedula=cedula, password=password)  # Usa cedula en lugar de username
+
+        # Si el usuario no se autentica correctamente, lanzamos un error
+        if user is None:
+            raise forms.ValidationError(
+                {'password': ["Los datos suministrados no existen o son incorrectos."]})
+
+        return cleaned_data
 
 class FormRegistrar(forms.Form, UserCreationForm):
 

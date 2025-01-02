@@ -13,52 +13,55 @@ from administrador import views as modelsAdministrador
 
 def iniciarSesion(request):
 
-    # Si ya tiene sesión no le abre esta página
+    # Si ya tiene sesión, redirigir a la página de inicio
     user = request.user
     if user.is_authenticated:
-        # HttpResponse('<script>alert("funcionó");</script>')
         return redirect('inicio')
+
     if request.method == 'GET':
+        # Si la petición es GET, mostrar el formulario de inicio de sesión vacío
         form = FormIniciar()
 
         return render(request, 'entrar.html', {
             'form': form,
         })
     else:
+        # Si la petición es POST, procesar el formulario
         form = FormIniciar(request.POST)
         if form.is_valid():
-            username = request.POST['username']
-            password = request.POST['password']
-            cuenta = authenticate(username=username, password=password)
+            cedula = form.cleaned_data['cedula']  # Usamos cleaned_data, no request.POST directamente
+            password = form.cleaned_data['password']
 
-            if cuenta:
+            # Autenticamos al usuario con la cédula y la contraseña
+            cuenta = authenticate(request, cedula=cedula, password=password)
+
+            if cuenta is not None:
                 login(request, cuenta)
 
-                # current_user = request.user
-                # print(current_user)
+                # Verificamos si el usuario tiene roles asignados
                 if not UsuarioRoles.objects.filter(id_usu=request.user).exists():
-                    # print(request.user)
-                    # print("no existe")
+                    # Si no tiene roles, creamos un nuevo rol para el usuario
                     roles = UsuarioRoles(id_usu=request.user)
                     roles.save()
 
-                    # Aqui ponemos el codigo del trigger -------
-
+                    # Auditoría: Registramos la creación de un nuevo rol
                     Audi = modelsAdministrador.Auditoria(
                         descripcion_aut=f"Se creó un 'rol' en la tabla *UsuarioRoles*, obteniendo permisos de usuario ({roles.es_usuario}), con el id {roles.pk}, creado por el usuario: {request.user.id},")
                     Audi.save()
 
-                    # fin de trigger ------
-
+                # Redirigimos al inicio si la autenticación fue exitosa
                 return redirect('inicio')
+            else:
+                # Si no hay una cuenta con la cédula y contraseña proporcionados, mostramos un error
+                form.add_error(None, "Los datos suministrados no existen o son incorrectos.")
         else:
-            print("")
-            # form = FormIniciar()
+            # Si el formulario no es válido, puedes manejar los errores si es necesario
+            print("Formulario no válido")
 
+    # Retornamos el formulario de nuevo con los errores si los hubo
     return render(request, 'entrar.html', {
         'form': form,
     })
-
 
 def Registrarse(request):
 

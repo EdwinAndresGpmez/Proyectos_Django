@@ -30,6 +30,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+CSRF_COOKIE_NAME = 'csrftoken'
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SECURE = False  # Si usas HTTPS, cambia esto a True
+
+
 
 # Application definition
 

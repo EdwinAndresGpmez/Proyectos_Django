@@ -7,7 +7,7 @@ from django.shortcuts import render, redirect
 from django.utils.timezone import now
 from usuario.models import Citas
 from django.core.exceptions import ValidationError
-from datetime import date
+from datetime import datetime, date
 
 
 
@@ -74,7 +74,8 @@ class FormHoras(forms.ModelForm):
 
     def clean(self):
         """
-        Validación personalizada para evitar duplicados desde el formulario, asegurando que no haya solapamientos.
+        Validación personalizada para evitar fechas y horas inválidas,
+        además de prevenir solapamientos.
         """
         cleaned_data = super().clean()
         inicio_hora = cleaned_data.get('inicio_hora')
@@ -82,19 +83,27 @@ class FormHoras(forms.ModelForm):
         fecha_habilitada = cleaned_data.get('fecha_habilitada')
         num_doc_prof = cleaned_data.get('num_doc_prof')
 
-        if num_doc_prof:
-            # Buscar al profesional con el número de documento
-            profesional = Profesional.objects.filter(num_doc_prof=num_doc_prof).first()
+        # Validar que la fecha no sea anterior a hoy
+        if fecha_habilitada and fecha_habilitada < date.today():
+            self.add_error('fecha_habilitada', "La fecha no puede ser anterior a hoy.")
 
+        # Validar que las horas no sean anteriores a la hora actual si la fecha es hoy
+        if fecha_habilitada == date.today():
+            current_time = datetime.now().time()
+            if inicio_hora and inicio_hora < current_time:
+                self.add_error('inicio_hora', "La hora de inicio no puede ser anterior a la hora actual.")
+            if final_hora and final_hora <= inicio_hora:
+                self.add_error('final_hora', "La hora de finalización debe ser mayor que la hora de inicio.")
+
+        # Validar solapamientos de horarios para el profesional
+        if num_doc_prof:
+            profesional = Profesional.objects.filter(num_doc_prof=num_doc_prof).first()
             if profesional:
-                # Verificar si ya hay un horario que se solape
                 horarios_ocupados = Horas.objects.filter(
                     fecha_habilitada=fecha_habilitada,
                     id_prof=profesional
                 )
-
                 for horario in horarios_ocupados:
-                    # Verificar si el nuevo horario se solapa con algún horario existente
                     if (inicio_hora < horario.final_hora and final_hora > horario.inicio_hora):
                         self.add_error(
                             None,
@@ -102,7 +111,6 @@ class FormHoras(forms.ModelForm):
                         )
 
         return cleaned_data
-
 
     def save(self, commit=True):
         instance = super().save(commit=False)
@@ -112,7 +120,6 @@ class FormHoras(forms.ModelForm):
         if commit:
             instance.save()
         return instance
-
 
 class PacienteForm(forms.ModelForm):
     class Meta:

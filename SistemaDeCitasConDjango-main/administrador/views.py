@@ -427,7 +427,6 @@ def is_ajax(request):
 def consultorio_cita(request):
     user = request.user
     if not user.is_authenticated:
-        # HttpResponse('<script>alert("funcionó");</script>')
         return redirect("iniciarSesion")
 
     tipoRol = TipoRol(request)
@@ -466,38 +465,50 @@ def consultorio_cita(request):
                 id_cit=request.POST["id_cit"]
             )
 
-            if request.POST["nacimiento_hidden"] == "nada":
-                idCon = Consultorio(
-                    id_cit=instance_Citas,
-                    peso_con=request.POST["peso_con"],
-                    altura_con=request.POST["altura_con"],
-                    nota_con=request.POST["nota_con"],
-                )
+            # Validar y convertir el campo nacimiento_hidden
+            nacimiento_hidden = request.POST.get("nacimiento_hidden")
+            nacimiento_convertido = None
 
-            else:
-                naci = request.POST["nacimiento_hidden"]
-                idCon = Consultorio(
-                    id_cit=instance_Citas,
-                    peso_con=request.POST["peso_con"],
-                    altura_con=request.POST["altura_con"],
-                    nota_con=request.POST["nota_con"],
-                    nacimiento_con=naci,
-                )
+            if nacimiento_hidden and nacimiento_hidden != "nada":
+                try:
+                    # Intentar convertir la fecha al formato YYYY-MM-DD
+                    nacimiento_convertido = datetime.strptime(
+                        nacimiento_hidden, "%d de %B de %Y"
+                    ).date()
+                except ValueError:
+                    # Error si la fecha no tiene el formato esperado
+                    return render(
+                        request,
+                        "consultorio_citas.html",
+                        {
+                            "error": "El formato de la fecha de nacimiento no es válido. Debe ser YYYY-MM-DD.",
+                            "citaSelect": modelsUsuario.Citas.objects.filter(
+                                id_cit=request.POST["id_cit"]
+                            ),
+                        },
+                    )
+
+            # Crear la instancia del Consultorio
+            idCon = Consultorio(
+                id_cit=instance_Citas,
+                peso_con=request.POST["peso_con"],
+                altura_con=request.POST["altura_con"],
+                nota_con=request.POST["nota_con"],
+                nacimiento_con=nacimiento_convertido,
+            )
 
             idCon.save()
 
+            # Actualizar el estado de la cita
             idCit = modelsUsuario.Citas.objects.get(id_cit=request.POST["id_cit"])
             idCit.estado_cita = "Realizada"
             idCit.save()
 
-            # Aqui ponemos el codigo del trigger -------
-
+            # Registrar auditoría
             Audi = Auditoria(
                 descripcion_aut=f"Se creado una 'consulta' en la tabla *Consultorio*, con el peso del paciente {request.POST['peso_con']} y con la nota de la consulta ({request.POST['nota_con']}) con el id {idCon.pk}, creado por el usuario: {request.user.id},"
             )
             Audi.save()
-
-            # fin de trigger ------
 
             print("hecho")
             return redirect("consultorio")
