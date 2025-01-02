@@ -200,37 +200,35 @@
         $(document).ready(function () {
             // Mostrar modal de eliminar
             $('.eliminar-profesional').click(function (e) {
-                e.preventDefault();
-                const idProf = $(this).data('id');
-                const nombreProf = $(this).data('nombre');
-                const especialidadProf = $(this).data('especialidad');
+        e.preventDefault();
+        const idProf = $(this).data('id');
+        const nombreProf = $(this).data('nombre');
 
-                $('#profNombre').text(nombreProf);
-                $('#profEspecialidad').text(especialidadProf);
-                $('#modalEliminar').modal('show');
+        $('#profNombre').text(nombreProf);
+        $('#modalEliminar').modal('show');
 
-                $('#confirmarEliminar').off('click').on('click', function () {
-                    $.ajax({
-                        url: `/eliminar_profesional/${idProf}/`, // Ruta ajustada
-                        method: 'POST',
-                        data: {
-                            'csrfmiddlewaretoken': '{{ csrf_token }}',
-                            'id_prof': idProf
-                        },
-                        success: function (response) {
-                            if (response.success) {
-                                location.reload(); // Recargar la página para reflejar el cambio
-                            } else {
-                                alert('Hubo un error al eliminar al profesional');
-                            }
-                        },
-                        error: function () {
-                            alert('Hubo un error en la solicitud');
-                        }
-                    });
-                });
+        $('#confirmarEliminar').off('click').on('click', function () {
+            $.ajax({
+                url: `/eliminar_profesional/${idProf}/`, // Ruta ajustada
+                method: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}',
+                    'id_prof': idProf
+                },
+                success: function (response) {
+                    if (response.status === "success") {
+                        alert(response.message); // Mensaje de éxito
+                        location.reload(); // Recargar la página
+                    } else if (response.status === "error") {
+                        alert(response.message); // Mostrar mensaje de error
+                    }
+                },
+                error: function () {
+                    alert('Hubo un error en la solicitud');
+                }
             });
-
+        });
+    });
             // Mostrar modal de editar
             $('.editar-profesional').click(function (e) {
                 e.preventDefault();

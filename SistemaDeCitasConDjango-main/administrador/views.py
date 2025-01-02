@@ -1062,31 +1062,41 @@ def eliminar_profesional(request, id_prof):
             return JsonResponse(
                 {
                     "status": "error",
-                    "message": "Este profesional tiene citas asociadas, no se puede eliminar.",
+                    "message": "Este profesional tiene citas asociadas, no se puede eliminar."
                 }
             )
 
-        # Verificar si el profesional tiene horas asociadas
+        # Verificar si el profesional tiene horarios asociados
         horas = Horas.objects.filter(id_prof=profesional)
         if horas.exists():
             # Si existen horas asociadas, devolver un mensaje de error
             return JsonResponse(
                 {
                     "status": "error",
-                    "message": "Este profesional tiene horarios asociados, no se puede eliminar.",
+                    "message": "Este profesional tiene horarios asociados, no se puede eliminar."
                 }
             )
 
-        # Si no tiene citas ni horas asociadas, eliminar el profesional
-        profesional.delete()
-        return JsonResponse(
-            {"status": "success", "message": "Profesional eliminado exitosamente."}
-        )
+        try:
+            # Si no tiene citas ni horas asociadas, proceder con la eliminación
+            profesional.delete()
+            return JsonResponse(
+                {"status": "success", "message": "Profesional eliminado exitosamente."}
+            )
+        except IntegrityError as e:
+            # Manejar cualquier error de integridad al eliminar
+            return JsonResponse(
+                {"status": "error", "message": f"Error de integridad: {str(e)}"}
+            )
+        except Exception as e:
+            # Manejar otros errores inesperados
+            return JsonResponse(
+                {"status": "error", "message": f"Hubo un error al eliminar al profesional: {str(e)}"}
+            )
 
     return JsonResponse(
         {"status": "error", "message": "Error al procesar la solicitud."}
     )
-
 
 # AQUI TENEMOS LAS VISTAS DE LUGAR -------
 
