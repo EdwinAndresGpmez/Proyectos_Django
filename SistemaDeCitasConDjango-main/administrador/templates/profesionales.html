@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Admin Dashboard</title>
-   
+
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     {% load static %}
 
@@ -40,6 +40,13 @@
                             {% if field.help_text %}
                             <small class="form-text text-muted">{{ field.help_text }}</small>
                             {% endif %}
+                            {% if field.errors %}
+                            <div class="alert alert-danger">
+                                {% for error in field.errors %}
+                                <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     </div>
@@ -47,7 +54,6 @@
                         Guardar Profesional
                     </button>
                 </form>
-
                 <!-- Lista de profesionales -->
                 <h4 class="mt-4">Lista de Profesionales</h4>
                 <table class="table table-bordered table-responsive">
@@ -90,6 +96,7 @@
                                     data-lugares="{% for lugar in profesional.lugares.all %}{{ lugar.id_lugar }}{% if not forloop.last %},{% endif %}{% endfor %}">
                                     Editar
                                 </a>
+
 
                                 <button class="btn btn-danger btn-sm eliminar-profesional"
                                     data-id="{{ profesional.id_prof }}" data-nombre="{{ profesional.nombre_prof }}">
@@ -161,14 +168,13 @@
                         </div>
                         <div class="form-group">
                             <label for="editarLugares">Lugares</label>
-                            <select id="editarLugares" name="lugares[]" multiple class="form-control">
+                            <select id="editarLugares" name="lugares[]" class="form-control" multiple>
                                 {% for lugar in lugares %}
-                                <option value="{{ lugar.id_lugar }}">
-                                    {{ lugar.nombre_lugar }}
-                                </option>
+                                <option value="{{ lugar.id_lugar }}">{{ lugar.nombre_lugar }}</option>
                                 {% endfor %}
-
                             </select>
+                            
+
                         </div>
                         <div class="form-group">
                             <label for="editarEstadoProf">Estado</label>
@@ -237,13 +243,18 @@
                 const estadoProf = $(this).data('estado');
 
                 // Manejo de lugares
-                let lugares = $(this).data('lugares');
-                if (typeof lugares === 'string') {
-                    lugares = lugares.split(',');
-                } else if (!Array.isArray(lugares)) {
-                    lugares = []; // Por defecto, un array vacío si no está definido o es incorrecto
-                }
+let lugares = $(this).data('lugares');
+if (typeof lugares === 'string') {
+    lugares = lugares.split(',').map(id => id.trim());
+} else if (!Array.isArray(lugares)) {
+    lugares = [];
+}
 
+// Preseleccionar lugares
+$('#editarLugares').val(lugares).trigger('change');
+
+
+                // Asignar valores al resto de los campos del modal
                 $('#editarIdProf').val(idProf);
                 $('#editarNombreProf').val(nombreProf);
                 $('#editarEspecialidadProf').val(especialidadProf);
@@ -251,13 +262,13 @@
                 $('#editarTelefonoProf').val(telefonoProf);
                 $('#editarEstadoProf').val(estadoProf);
 
-                // Establecer los lugares seleccionados
-                $('#editarLugares').val(lugares);
-
+                // Mostrar el modal de edición
                 $('#modalEditar').modal('show');
             });
 
 
+
+            // Enviar el formulario de edición
             // Enviar el formulario de edición
             $('#formEditarProfesional').submit(function (e) {
                 e.preventDefault();
@@ -284,16 +295,20 @@
                     },
                     success: function (response) {
                         if (response.success) {
-                            location.reload(); // Recargar la página para reflejar el cambio
+                            alert(response.message); // Mensaje de éxito
+                            location.reload(); // Recargar la página
                         } else {
-                            alert('Hubo un error al guardar los cambios');
+                            alert(response.message); // Mostrar el mensaje de error del backend
                         }
                     },
-                    error: function () {
-                        alert('Hubo un error en la solicitud');
+                    error: function (xhr) {
+                        // Manejar errores inesperados
+                        const errorMessage = xhr.responseJSON?.message || 'Hubo un error en la solicitud. Verifica los datos.';
+                        alert(errorMessage);
                     }
                 });
             });
+
         });
     </script>
 </body>

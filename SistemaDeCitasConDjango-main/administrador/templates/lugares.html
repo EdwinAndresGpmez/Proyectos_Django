@@ -12,43 +12,50 @@
     <!-- Fuentes y estilos -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     {% load static %}
-    
+
 
     <!-- Estilos personalizados para flexbox y disposición en columnas -->
     <style>
         /* Asegura que el contenedor tenga un margen superior adecuado y no se solapen los elementos */
-.container {
-    margin-top: 100px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    width: 100%;
-}
+        .container {
+            margin-top: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+        }
 
-/* Ajusta el tamaño de los elementos cuando la pantalla es más pequeña */
-@media (max-width: 1024px) {
-    .container {
-        margin-top: 80px; /* Ajusta el margen superior */
-    }
-    .container > * {
-        flex: none; /* Evita que los elementos se distribuyan */
-    }
-}
+        /* Ajusta el tamaño de los elementos cuando la pantalla es más pequeña */
+        @media (max-width: 1024px) {
+            .container {
+                margin-top: 80px;
+                /* Ajusta el margen superior */
+            }
 
-/* Para pantallas aún más pequeñas (por ejemplo, dispositivos móviles), puedes ajustar el diseño aún más */
-@media (max-width: 768px) {
-    .container {
-        margin-top: 60px;
-    }
-    .form-group {
-        width: 100%; /* Asegura que los campos del formulario ocupen todo el ancho disponible */
-    }
-    .table {
-        font-size: 0.8rem; /* Reduce el tamaño de la tabla */
-    }
-}
+            .container>* {
+                flex: none;
+                /* Evita que los elementos se distribuyan */
+            }
+        }
+
+        /* Para pantallas aún más pequeñas (por ejemplo, dispositivos móviles), puedes ajustar el diseño aún más */
+        @media (max-width: 768px) {
+            .container {
+                margin-top: 60px;
+            }
+
+            .form-group {
+                width: 100%;
+                /* Asegura que los campos del formulario ocupen todo el ancho disponible */
+            }
+
+            .table {
+                font-size: 0.8rem;
+                /* Reduce el tamaño de la tabla */
+            }
+        }
     </style>
-    
+
 </head>
 
 <body>
@@ -75,7 +82,8 @@
                     {{ formLugares.lugares_estado|add_class:"form-control" }}
                 </div>
             </div>
-            <button type="submit" name="submitLugares" class="btn btn-primary btn-lg btn-block mt-3">Guardar Lugar</button>
+            <button type="submit" name="submitLugares" class="btn btn-primary btn-lg btn-block mt-3">Guardar
+                Lugar</button>
         </form>
 
         <!-- Lista de lugares -->
@@ -92,26 +100,23 @@
             </thead>
             <tbody>
                 {% for lugar in lugares %}
-                    <tr>
-                        <td>{{ lugar.id_lugar }}</td>
-                        <td>{{ lugar.nombre_lugar }}</td>
-                        <td>{{ lugar.ubicacion_lugar }}</td>
-                        <td>{{ lugar.lugares_estado }}</td>
-                        <td>
-                            <a href="#" class="btn btn-warning btn-sm editar-lugar"
-                               data-id="{{ lugar.id_lugar }}"
-                               data-nombre="{{ lugar.nombre_lugar }}"
-                               data-ubicacion="{{ lugar.ubicacion_lugar }}"
-                               data-estado="{{ lugar.lugares_estado }}">Editar</a>
-                            <button class="btn btn-danger btn-sm eliminar-lugar" 
-                                    data-id="{{ lugar.id_lugar }}" 
-                                    data-nombre="{{ lugar.nombre_lugar }}">Eliminar</button>
-                        </td>
-                    </tr>
+                <tr>
+                    <td>{{ lugar.id_lugar }}</td>
+                    <td>{{ lugar.nombre_lugar }}</td>
+                    <td>{{ lugar.ubicacion_lugar }}</td>
+                    <td>{{ lugar.lugares_estado|yesno:"Activo,Inactivo" }}</td>
+                    <td>
+                        <a href="#" class="btn btn-warning btn-sm editar-lugar" data-id="{{ lugar.id_lugar }}"
+                            data-nombre="{{ lugar.nombre_lugar }}" data-ubicacion="{{ lugar.ubicacion_lugar }}"
+                            data-estado="{{ lugar.lugares_estado }}">Editar</a>
+                        <button class="btn btn-danger btn-sm eliminar-lugar" data-id="{{ lugar.id_lugar }}"
+                            data-nombre="{{ lugar.nombre_lugar }}">Eliminar</button>
+                    </td>
+                </tr>
                 {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center">No hay Lugares registrados.</td>
-                    </tr>
+                <tr>
+                    <td colspan="5" class="text-center">No hay Lugares registrados.</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -128,7 +133,8 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <p id="mensajeEliminar">¿Estás seguro de que deseas eliminar el lugar <span id="lugarNombre"></span>?</p>
+                    <p id="mensajeEliminar">¿Estás seguro de que deseas eliminar el lugar <span
+                            id="lugarNombre"></span>?</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -182,45 +188,58 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             // Mostrar modal de eliminar
-            $('.eliminar-lugar').click(function(e) {
+            $('.eliminar-lugar').click(function (e) {
                 e.preventDefault();
+
+                // Obtener datos del lugar desde los atributos data
                 const idLugar = $(this).data('id');
                 const nombreLugar = $(this).data('nombre');
-                const ubicacionLugar = $(this).data('ubicacion');
 
+                // Validar si los datos existen antes de usarlos
+                if (!idLugar || !nombreLugar) {
+                    alert('Faltan datos del lugar. Por favor, inténtalo de nuevo.');
+                    return;
+                }
+
+                // Mostrar los datos en el modal
                 $('#lugarNombre').text(nombreLugar);
-                $('#lugarUbicacion').text(ubicacionLugar);
                 $('#modalEliminar').modal('show');
 
                 // Confirmar eliminación
-                $('#confirmarEliminar').off('click').on('click', function() {
+                $('#confirmarEliminar').off('click').on('click', function () {
                     $.ajax({
-                        url: "{% url 'eliminar_lugar' 0 %}".replace('0', idLugar),
+                        url: "{% url 'eliminar_lugar' 0 %}".replace('0', idLugar), // Genera la URL dinámica
                         method: 'POST',
                         data: {
-                            'csrfmiddlewaretoken': '{{ csrf_token }}',
-                            'id_lugar': idLugar
+                            'csrfmiddlewaretoken': '{{ csrf_token }}' // Incluye el token CSRF
                         },
-                        success: function(response) {
+                        success: function (response) {
+                            // Validar y manejar la respuesta del backend
                             if (response.status === 'success') {
+                                // Eliminar la fila correspondiente de la tabla
                                 $('button[data-id="' + idLugar + '"]').closest('tr').remove();
                                 $('#modalEliminar').modal('hide');
-                                alert(response.message); // Mensaje del backend
+                                alert(response.message || 'Lugar eliminado correctamente.');
+                            } else if (response.status === 'error') {
+                                alert(response.message || 'Ocurrió un error al eliminar el lugar.');
                             } else {
-                                alert(response.message); // Mensaje de error
+                                alert('Respuesta inesperada del servidor.');
                             }
                         },
-                        error: function() {
+                        error: function (xhr, status, error) {
+                            // Manejar errores en la solicitud AJAX
+                            console.error('Error en la solicitud AJAX:', error);
                             alert('Ocurrió un error al intentar eliminar el lugar.');
                         }
                     });
                 });
             });
 
+
             // Mostrar modal de edición
-            $('.editar-lugar').click(function(e) {
+            $('.editar-lugar').click(function (e) {
                 e.preventDefault();
                 const idLugar = $(this).data('id');
                 const nombreLugar = $(this).data('nombre');
@@ -237,7 +256,7 @@
             });
 
             // Guardar cambios en el modal de edición
-            $('#formEditarlugar').submit(function(e) {
+            $('#formEditarlugar').submit(function (e) {
                 e.preventDefault();
 
                 const idLugar = $('#editarIdLugar').val();
@@ -253,7 +272,7 @@
                     url: "{% url 'editar_lugar' 0 %}".replace('0', idLugar),
                     method: 'POST',
                     data: data,
-                    success: function(response) {
+                    success: function (response) {
                         if (response.status === 'success') {
                             const row = $('a[data-id="' + idLugar + '"]').closest('tr');
                             row.find('td:eq(1)').text(data.nombre_lugar);
@@ -265,7 +284,7 @@
                             alert('Error al guardar los cambios.');
                         }
                     },
-                    error: function() {
+                    error: function () {
                         alert('Ocurrió un error al intentar editar el lugar.');
                     }
                 });
@@ -275,4 +294,5 @@
 </body>
 
 {% include "pie.html" %}
-</html>
+
+</html> 

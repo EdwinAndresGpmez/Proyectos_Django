@@ -936,12 +936,39 @@ def lista_profesionales(request):
                     # Crear el profesional
                     nuevo_profesional = formProfesional.save(commit=False)
                     lugares_seleccionados = formProfesional.cleaned_data.get("lugares")
+                    
+                    # Verificar si alguno de los lugares ya está asociado a otro profesional
+                    lugares_ocupados = Profesional.objects.filter(
+                        lugares__in=lugares_seleccionados
+                    ).distinct()
+                    
+                    if lugares_ocupados.exists():
+                        # Obtener los nombres de los lugares ocupados
+                        lugar_nombres = ", ".join(
+                            lugar for lugar in lugares_ocupados.values_list(
+                                "lugares__nombre_lugar", flat=True
+                            )
+                        )
+                        formProfesional.add_error(
+                            "lugares",
+                            f"Los lugares '{lugar_nombres}' ya están asociados a otros profesionales."
+                        )
+                        return render(
+                            request,
+                            "profesionales.html",
+                            {
+                                "formProfesional": formProfesional,
+                                "profesionales": Profesional.objects.all(),
+                                "lugares": Lugares.objects.all(),
+                            },
+                        )
+                    
+                    # Guardar el profesional y asignar los lugares seleccionados
                     nuevo_profesional.save()  # Guarda primero el profesional
                     if lugares_seleccionados:
-                        nuevo_profesional.lugares.set(
-                            lugares_seleccionados
-                        )  # Relacionar lugares
+                        nuevo_profesional.lugares.set(lugares_seleccionados)  # Relacionar lugares
                     return redirect("lista_profesionales")
+                
                 except IntegrityError:
                     formProfesional.add_error(
                         "num_doc_prof", "El número de documento ya existe."
@@ -976,52 +1003,49 @@ def lista_profesionales(request):
     )
 
 
+
+
 def editar_profesional(request, id_prof):
     if request.method == "POST":
         # Obtener el profesional a editar
         profesional = get_object_or_404(Profesional, id_prof=id_prof)
 
         # Actualizar los campos básicos
-        profesional.nombre_prof = request.POST.get(
-            "nombre_prof", profesional.nombre_prof
-        )
+        profesional.nombre_prof = request.POST.get("nombre_prof", profesional.nombre_prof)
         profesional.especialidad_prof = request.POST.get(
             "especialidad_prof", profesional.especialidad_prof
         )
         profesional.email_prof = request.POST.get("email_prof", profesional.email_prof)
-        profesional.telefono_prof = request.POST.get(
-            "telefono_prof", profesional.telefono_prof
-        )
-        profesional.estado_prof = (
-            request.POST.get("estado_prof") == "True"
-        )  # Convertir a booleano
+        profesional.telefono_prof = request.POST.get("telefono_prof", profesional.telefono_prof)
+        profesional.estado_prof = request.POST.get("estado_prof") == "True"  # Convertir a booleano
 
         # Obtener los lugares seleccionados (IDs enviados desde el formulario)
         lugares_ids = request.POST.getlist("lugares[]")
-        print(
-            "Lugares seleccionados:", lugares_ids
-        )  # Verifica si los lugares están llegando correctamente
+        print("Lugares seleccionados:", lugares_ids)  # Verifica si los lugares están llegando correctamente
 
-        # Si hay lugares seleccionados, obtenemos los objetos correspondientes
         if lugares_ids:
+            # Validar si algún lugar ya está asociado a otro profesional
             lugares = Lugares.objects.filter(id_lugar__in=lugares_ids)
-            print(
-                "Lugares encontrados:", lugares
-            )  # Verifica si se encuentran correctamente los lugares
+            for lugar in lugares:
+                # Verificar si algún otro profesional ya está asociado al lugar
+                otros_profesionales = lugar.profesionales.exclude(id_prof=id_prof)
+                if otros_profesionales.exists():
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "message": f"El lugar '{lugar.nombre_lugar}' ya está asociado a otro profesional.",
+                        }
+                    )
 
-            # Actualizar la relación ManyToMany
-            profesional.lugares.set(
-                lugares
-            )  # Asocia los lugares seleccionados al profesional
+            # Actualizar la relación ManyToMany si pasa la validación
+            profesional.lugares.set(lugares)
         else:
             profesional.lugares.clear()  # Si no hay lugares seleccionados, limpia la relación
 
         # Guardar los cambios
         profesional.save()
 
-        return JsonResponse(
-            {"status": "success", "message": "Profesional editado correctamente."}
-        )
+        return JsonResponse({"success": True, "message": "Profesional editado correctamente."})
     else:
         return JsonResponse({"status": "error", "message": "Método no permitido."})
 
@@ -1101,15 +1125,6 @@ def eliminar_lugar(request, id_lugar):
             # Obtener el lugar por su ID
             lugar = Lugares.objects.get(id_lugar=id_lugar)
 
-            # Verificar si el lugar está asociado a algún servicio
-            if Servicio.objects.filter(lugares=lugar).exists():
-                return JsonResponse(
-                    {
-                        "status": "error",
-                        "message": "No se puede eliminar el lugar, está asociado a uno o más servicios.",
-                    }
-                )
-
             # Verificar si el lugar está asociado a alguna cita
             if modelsUsuario.Citas.objects.filter(id_lugar=lugar).exists():
                 return JsonResponse(
@@ -1119,12 +1134,23 @@ def eliminar_lugar(request, id_lugar):
                     }
                 )
 
-            # Si no está asociado a ningún servicio o cita, proceder con la eliminación
+            # Verificar si el lugar está asociado a algún profesional
+            if Profesional.objects.filter(lugares=lugar).exists():
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "No se puede eliminar el lugar, está asociado a uno o más profesionales.",
+                    }
+                )
+
+            # Si no está asociado a ningún profesional ni cita, proceder con la eliminación
             lugar.delete()
-            return JsonResponse({"status": "success"})
+            return JsonResponse({"status": "success", "message": "Lugar eliminado exitosamente."})
 
         except Lugares.DoesNotExist:
-            return JsonResponse({"status": "error", "message": "Lugar no encontrado"})
+            return JsonResponse({"status": "error", "message": "Lugar no encontrado."})
+
+
 
 
 # AQUI TENEMOS LAS VISTAS DE HORARIOS -------
