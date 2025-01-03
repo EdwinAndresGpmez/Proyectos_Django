@@ -23,17 +23,17 @@
                 </h1>
                 <div class="container">
                     {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                        {% endfor %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    {% endfor %}
                     {% endif %}
                 </div>
-                
+
                 <form method="post">
                     {% csrf_token %}
                     <div class="form-row">
@@ -55,7 +55,7 @@
                             </div>
                         </div>
                         {% endfor %}
-                        
+
                     </div>
                     <button type="submit" name="submitServicios" class="btn btn-primary btn-lg btn-block">Guardar
                         Servicios</button>
@@ -214,6 +214,7 @@
                         },
                         success: function (response) {
                             if (response.status === 'success') {
+                                // Eliminar la fila de la tabla
                                 $('button[data-id="' + idServ + '"]').closest('tr').remove();
                                 $('#modalEliminar').modal('hide');
                                 alert('Servicio eliminado exitosamente.');
@@ -263,41 +264,61 @@
 
 
             $('#formEditarServicios').submit(function (e) {
-                e.preventDefault();
-                const seleccionados = $('#editarProfesionales').val();
-                console.log("Profesionales seleccionados: ", seleccionados);
-                console.log("Formulario de edición enviado");
+    e.preventDefault();
+    const seleccionados = $('#editarProfesionales').val();
+    const idServ = $('#editarIdServ').val();
+    const csrfToken = $('meta[name="csrf-token"]').attr('content'); // Token CSRF
 
-                const idServ = $('#editarIdServ').val();
-                const csrfToken = $('meta[name="csrf-token"]').attr('content'); // Token CSRF
+    $.ajax({
+        url: "{% url 'editar_servicios' 0 %}".replace('0', idServ),
+        method: 'POST',
+        data: {
+            nombre_servicio: $('#editarNombreServ').val(),
+            descripcion_servicio: $('#editarDescripcionServ').val(),
+            servicio_estado: $('#editarEstadoServ').val(),
+            profesionales: seleccionados,
+            csrfmiddlewaretoken: csrfToken
+        },
+        success: function (response) {
+            console.log("Respuesta del servidor:", response);  // Verifica lo que devuelve el servidor
+            if (response.status === 'success') {
+                const servicio = response.servicio; // Asegúrate de que la respuesta contenga 'servicio'
+                const updatedRow = `
+                    <td>${servicio.id_servicio}</td>
+                    <td>${servicio.nombre_servicio}</td>
+                    <td>${servicio.descripcion_servicio}</td>
+                    <td>${servicio.servicio_estado ? 'Activo' : 'Inactivo'}</td>
+                    <td>${servicio.profesionales.map(profesional => profesional.nombre_prof).join(', ')}</td>
+                    <td>
+                        <a href="#" class="btn btn-warning btn-sm editar-servicios"
+                            data-id="${servicio.id_servicio}"
+                            data-servicio="${servicio.nombre_servicio}"
+                            data-descripcion="${servicio.descripcion_servicio}"
+                            data-estado="${servicio.servicio_estado}"
+                            data-profesionales="${servicio.profesionales.map(profesional => profesional.id_prof).join(',')}">Editar</a>
+                        <button class="btn btn-danger btn-sm eliminar-servicios"
+                            data-id="${servicio.id_servicio}"
+                            data-servicio="${servicio.nombre_servicio}">Eliminar</button>
+                    </td>
+                `;
 
-                $.ajax({
-                    url: "{% url 'editar_servicios' 0 %}".replace('0', idServ),
-                    method: 'POST',
-                    data: {
-                        nombre_servicio: $('#editarNombreServ').val(),
-                        descripcion_servicio: $('#editarDescripcionServ').val(),
-                        servicio_estado: $('#editarEstadoServ').val(),
-                        profesionales: seleccionados,
-                        csrfmiddlewaretoken: csrfToken
-                    },
-                    success: function (response) {
-                        console.log("Respuesta del servidor:", response);
-                        if (response.status === 'success') {
-                            console.log("Servicio editado correctamente");
-                            alert('Servicio editado correctamente.');
-                            $('#modalEditar').modal('hide');
-                        } else {
-                            console.error("Error al editar el servicio:", response.message);
-                            alert('Error al editar el servicio.');
-                        }
-                    },
-                    error: function (xhr, status, error) {
-                        console.error("Error en la solicitud AJAX:", status, error);
-                        alert('Error en la solicitud AJAX.');
-                    }
-                });
-            });
+                // Reemplazar la fila en la tabla
+                $(`button[data-id="${idServ}"]`).closest('tr').html(updatedRow);
+
+                // Cerrar el modal
+                $('#modalEditar').modal('hide');
+                alert('Servicio editado correctamente.');
+            } else {
+                alert('Error al editar el servicio.');
+            }
+        },
+        error: function (xhr, status, error) {
+            alert('Error en la solicitud AJAX.');
+        }
+    });
+});
+
+
         });
 
     </script>

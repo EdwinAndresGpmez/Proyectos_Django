@@ -1,52 +1,41 @@
 {% include "cabecera-usuario.html" %}
 
-<!-- Titulo de la página actual-->
+<!-- Titulo de la página actual -->
 <h1 class="text-center border border-dark p-3 paginas-titulo">
     BIENVENIDO {{ user.nombre }}
 </h1>
 
-<!-- Línea superadora -->
+<!-- Línea separadora -->
 <hr />
 
-<!-- Contenedor de la información de las citas-->
+<!-- Contenedor de la información de las citas -->
 <div class="container-fluid inicio-usuario-container">
 
     {% for rol in listaRoles %}
     {% if rol.es_administrador %}
-
     <div class="row pb-4">
-
         <h2 class="text-center pb-2"><b>ROLES</b></h2>
-
         <div class="col-12 d-flex justify-content-center">
             <div class="col-3 text-center px-2">
-                <a name="" id="" class=" btn btn-primary w-100" href="{% url 'inicio' %}" role="button">Usuario/a</a>
+                <a name="" id="" class="btn btn-primary w-100" href="{% url 'inicio' %}" role="button">Usuario/a</a>
             </div>
             {% if rol.es_administrador %}
             <div class="col-3 text-center px-2">
-                <a name="" id="" class=" btn btn-primary w-100" href="{% url 'inicioAdmin' %}"
-                    role="button">Administrador/a</a>
+                <a name="" id="" class="btn btn-primary w-100" href="{% url 'inicioAdmin' %}" role="button">Administrador/a</a>
             </div>
             {% endif %}
-
             {% if rol.es_programador %}
             <div class="col-3 text-center px-2">
-                <a name="" id="" class=" btn btn-primary w-100" href="{% url 'inicio_programador' %}"
-                    role="button">Programador/a</a>
+                <a name="" id="" class="btn btn-primary w-100" href="{% url 'inicio_programador' %}" role="button">Programador/a</a>
             </div>
             {% endif %}
-
         </div>
-
     </div>
-
     {% endif %}
     {% endfor %}
 
     <div>
-        <h2 class="text-center pb-2">
-            <b>SUS DATOS</b>
-        </h2>
+        <h2 class="text-center pb-2"><b>SUS DATOS</b></h2>
     </div>
 
     <div>
@@ -56,18 +45,15 @@
                     <div class="input-group-text">
                         <i class="fa-solid fa-user fa-xl"></i>
                     </div>
-                    <input type="text" class="form-control" id="autoSizingInputGroup" placeholder="{{ user.nombre }}"
-                        disabled>
+                    <input type="text" class="form-control" placeholder="{{ user.nombre }}" disabled>
                 </div>
             </div>
-
             <div class="col-6 position-relative">
                 <div class="input-group input-group-lg">
                     <div class="input-group-text">
                         <i class="fa-solid fa-id-card fa-xl"></i>
                     </div>
-                    <input type="text" class="form-control" id="autoSizingInputGroup" placeholder="{{ user.cedula }}"
-                        disabled>
+                    <input type="text" class="form-control" placeholder="{{ user.cedula }}" disabled>
                 </div>
             </div>
         </div>
@@ -75,10 +61,9 @@
             <div class="col-6 position-relative p-1">
                 <div class="input-group input-group-lg">
                     <div class="input-group-text">
-                        <i class="fa-solid fa-id-card fa-xl"></i>
+                        <i class="fa-solid fa-phone fa-xl"></i>
                     </div>
-                    <input type="text" class="form-control" id="autoSizingInputGroup" placeholder="0{{ user.numero }}"
-                        disabled>
+                    <input type="text" class="form-control" placeholder="0{{ user.numero }}" disabled>
                 </div>
             </div>
             <div class="col-6 position-relative">
@@ -86,27 +71,20 @@
                     <div class="input-group-text">
                         <i class="fa-solid fa-envelope-open-text fa-xl"></i>
                     </div>
-                    <input type="text" class="form-control" id="autoSizingInputGroup" placeholder="{{ user.correo }}"
-                        disabled>
+                    <input type="text" class="form-control" placeholder="{{ user.correo }}" disabled>
                 </div>
             </div>
         </div>
     </div>
 
-    <p class="m-0 p-0 text-center">Si desea cambiar sus datos has click <a href="{% url 'configuracion' %}">aquí</a>.
-    </p>
+    <p class="m-0 p-0 text-center">Si desea cambiar sus datos haga clic <a href="{% url 'configuracion' %}">aquí</a>.</p>
 
     {% if listaCitas %}
+    <h2 class="text-center pt-4"><b>LAS CITAS QUE HA REGISTRADO</b></h2>
 
-    <!-- -->
-    <h2 class="text-center pt-4">
-        <b>LAS CITAS QUE HA REGISTRADO</b>
-    </h2>
-
-    <!-- Tabla con las CITAS -->
+    <!-- Tabla con las citas -->
     <table class="table table-hover">
         <thead>
-            <!-- Caracteristicas/Opciones de cada cita -->
             <tr>
                 <th scope="col">Fecha</th>
                 <th scope="col">Servicio</th>
@@ -128,60 +106,27 @@
                 <th class="text-truncate">{{ cita.estado_cita }}</th>
                 <td>
                     <div class="text-left">
-                        <!-- Icono ELIMINAR cita -->
-                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalDelete{{ cita.id_cit }}">
-                            <i class=" fa-solid fa-trash-can"></i>
+                        <!-- Botón Cancelar Cita -->
+                        <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#modalCancel{{ cita.id_cit }}">
+                            <i class="fa-solid fa-ban"></i>
                         </button>
 
-                        <!-- Modal de Eliminar cita -->
-                        <div class="modal fade" id="modalDelete{{ cita.id_cit }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                        <!-- Modal para Cancelar Cita -->
+                        <div class="modal fade" id="modalCancel{{ cita.id_cit }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title" id="exampleModalLabel">Eliminar Cita</h5>
+                                        <h5 class="modal-title" id="exampleModalLabel">Cancelar Cita</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                     </div>
                                     <div class="modal-body">
-                                        <h5 class="text-center">Los Datos que suministraste</h5>
-                                        <div class="mb-3">
-                                            <label class="form-label">Día de Cita</label>
-                                            <input type="text" class="form-control" placeholder="{{ cita.dia_cit }}" disabled>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Fecha de Cita</label>
-                                            <input type="text" class="form-control" placeholder="{{ cita.id_hora.inicio_hora }} a {{ cita.id_hora.final_hora }}" disabled>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Servicio</label>
-                                            <input type="text" class="form-control" placeholder="{{ cita.id_servicio.nombre_servicio }}" disabled>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Profesional</label>
-                                            <input type="text" class="form-control" placeholder="{{ cita.id_prof.nombre_prof }}" disabled>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Lugar de Cita</label>
-                                            <input type="text" class="form-control" placeholder="{{ cita.id_lugar.nombre_lugar }}" disabled>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Paciente</label>
-                                            {% if cita.id_pac %}
-                                            <input type="text" class="form-control" placeholder="{{ cita.id_pac.nombre_pac }}" disabled>
-                                            {% else %}
-                                            <input type="text" class="form-control" placeholder="Sin paciente" disabled>
-                                            {% endif %}
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Nota/Descripción</label>
-                                            <textarea class="form-control" placeholder="{{ cita.nota_cit }}" disabled></textarea>
-                                        </div>
-                                        ¿Está seguro que desea eliminar esta cita? Tendrá que esperar 24 horas para volver a realizar una nueva.
+                                        <p>¿Está seguro que desea cancelar esta cita? Podrá reprogramarla en cualquier momento.</p>
                                     </div>
-                                    <form action="{% url 'deleteCita' cita.id_cit %}" method="POST">
+                                    <form action="{% url 'cancelarCita' cita.id_cit %}" method="POST">
                                         {% csrf_token %}
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Salir</button>
-                                            <button type="submit" class="btn btn-danger">Eliminar</button>
+                                            <button type="submit" class="btn btn-warning">Cancelar</button>
                                         </div>
                                     </form>
                                 </div>
@@ -195,25 +140,12 @@
     </table>
     {% else %}
     <div class="col-lg-12 text-center">
-        <img src="https://t3.ftcdn.net/jpg/01/32/69/98/360_F_132699825_ioyaF5ZgaCehn4907aai6fZkFijtBIEk.jpg"
-            class="img-fluid pt-4" alt="...">
+        <img src="https://t3.ftcdn.net/jpg/01/32/69/98/360_F_132699825_ioyaF5ZgaCehn4907aai6fZkFijtBIEk.jpg" class="img-fluid pt-4" alt="...">
     </div>
-
-    <!-- Espacio de línea -->
     <br>
-
-    <h4 class="text-center">
-        "En estos momentos no ha pedido ninguna cita"
-    </h4>
-    <h4 class="text-center">
-        "Para pedir una diríjase a <b>
-            <i>
-                <a href="{% url 'cita' %}">Citas</a>
-            </i>
-        </b>"
-    </h4>
+    <h4 class="text-center">"En estos momentos no ha registrado ninguna cita"</h4>
+    <h4 class="text-center">"Para registrar una diríjase a <b><i><a href="{% url 'cita' %}">Citas</a></i></b>"</h4>
     {% endif %}
-
 </div>
 
 <!-- Plantilla del pie de página -->

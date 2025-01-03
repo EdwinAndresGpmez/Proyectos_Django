@@ -1,13 +1,4 @@
-<!-- Plantilla de la cabecera de página, no supe como hacerlo con html 
-así que transforme el archivo a PHP -->
 {% include "cabecera-administrador.html" %}
-
-<!--
-<style>
-    .div_select_cita {
-        display: block;
-    }
-</style>-->
 
 <!-- Titulo de la página actual-->
 <h1 class="text-center border border-dark p-3 paginas-titulo">
@@ -24,25 +15,25 @@ así que transforme el archivo a PHP -->
     <div class="row consultorio-inputs">
         <div class="col-12 mt-3">
             <label class="form-label">Cita</label>
-            <form action="{% url 'consultorio_cita' %}" class="needs-validation" method="get" novalidate>
+            <form action="{% url 'consultorio_cita' %}" class="needs-validation" method="post" novalidate>
                 {% csrf_token %}
 
                 <div class="input-group mb-3">
-
                     <select class="form-select" required id="id_cita" name="id_cit">
                         <option selected hidden value="">Elige la cita</option>
                         {% if listaCitas %}
-                        {% for cita in listaCitas %}
-                        <option value="{{ cita.id_cit }}">Cita de {{ cita.id_usu.nombre }}
-                            {% if cita.id_pac %}
-                            con el paciente {{ cita.id_pac.nombre_pac }} para el día {{cita.dia_cit }}.
-                            {% else %}
-                            , por primera vez para el día {{cita.dia_cit }}.
-                            {% endif %}
-                        </option>
-                        {% endfor %}
+                            {% for cita in listaCitas %}
+                                <option value="{{ cita.id_cit }}">
+                                    Cita de {{ cita.id_usu.nombre }}
+                                    {% if cita.id_pac %}
+                                        con el paciente {{ cita.id_pac.nombre_pac }} para el día {{cita.dia_cit}}.
+                                    {% else %}
+                                        , por primera vez para el día {{cita.dia_cit}}.
+                                    {% endif %}
+                                </option>
+                            {% endfor %}
                         {% else %}
-                        <option value="" disabled selected>No hay ninguna cita para hoy</option>
+                            <option value="" disabled selected>No hay ninguna cita para hoy</option>
                         {% endif %}
                     </select>
                     <div class="invalid-tooltip">
@@ -50,25 +41,36 @@ así que transforme el archivo a PHP -->
                     </div>
                 </div>
 
+                <div class="mb-3">
+                    <label for="nota_con" class="form-label">Nota de la consulta</label>
+                    <textarea class="form-control" id="nota_con" name="nota_con" rows="3" required></textarea>
+                    <div class="invalid-tooltip">
+                        Es necesario agregar una nota.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="nacimiento_con" class="form-label">Fecha de Nacimiento</label>
+                    <input type="date" class="form-control" id="nacimiento_con" name="nacimiento_con" required>
+                    <div class="invalid-tooltip">
+                        Es necesario ingresar la fecha de nacimiento.
+                    </div>
+                </div>
+
                 <div class="row d-flex">
                     <div class="col-2"></div>
-                    <div class="col-8 d-flex mb-3 ">
-                        <!-- ENVIAR INFORMACION -->
+                    <div class="col-8 d-flex mb-3">
                         <button type="submit" class="w-100 btn btn-primary btn-lg text-white">Enviar</button>
                     </div>
                     <div class="col-2"></div>
-
                 </div>
             </form>
         </div>
-
     </div>
-
 </div>
 
-<!--En caso de ya estar registrado o haber hecho una cita antes TODO-->
+<!-- En caso de ya estar registrado o haber hecho una cita antes TODO-->
 <hr>
-
 
 <!-- Plantilla del pie de página -->
 {% include "pie.html" %}

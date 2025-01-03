@@ -149,8 +149,6 @@ class Consultorio(models.Model):
     id_con = models.AutoField(primary_key=True)
     id_cit = models.ForeignKey(
         to='usuario.Citas', null=True, blank=True, on_delete=models.CASCADE)
-    peso_con = models.IntegerField()
-    altura_con = models.CharField(max_length=100)
     nota_con = models.TextField()
     nacimiento_con = models.DateField(null=True)
     consultorio_estado = models.BooleanField(default=True)

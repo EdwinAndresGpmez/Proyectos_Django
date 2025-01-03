@@ -97,7 +97,8 @@ def inicio(request):
         })
 
 
-def deleteCita_historial(request, id_cit):
+    
+def cancelarCita(request, id_cit):
     user = request.user
     if not user.is_authenticated:
         return redirect('iniciarSesion')
@@ -106,19 +107,25 @@ def deleteCita_historial(request, id_cit):
 
     if not tipoRol.es_usuario:
         return redirect('cerrar')
-    else:
+    
+    # Obtener la cita
+    try:
         idCita = Citas.objects.get(id_cit=id_cit)
-        idCita.citas_estado = False
-        idCita.save()
+    except Citas.DoesNotExist:
+        return redirect('inicio')  # Manejar el caso de cita inexistente
 
-        # Aqui ponemos el codigo del trigger -------
+    # Actualizar el estado de la cita
+    idCita.estado_cita = "Cancelada"
+    idCita.save()
 
-        Audi = modelsAdministrador.Auditoria(
-            descripcion_aut=f"Se eliminó una 'cita' en la tabla *Citas*, para el día {idCita.dia_cit} y con el id {id_cit}, eliminado por el usuario: {request.user.id},")
-        Audi.save()
+    # Registrar la auditoría
+    Audi = modelsAdministrador.Auditoria(
+        descripcion_aut=f"Se cambió el estado de la cita con ID {id_cit} a 'Cancelada', realizada por el usuario: {request.user.id}."
+    )
+    Audi.save()
 
-        # fin de trigger ------
-        return redirect('inicio')
+    return redirect('inicio')
+
 
 def cita(request):
     user = request.user
@@ -130,11 +137,11 @@ def cita(request):
         return redirect('cerrar')
 
     fecha = request.GET.get("fecha")
-    
+
     if request.method == 'GET':
         formCitas = FormCitas()
 
-        # Obtener citas del día
+        # Obtener datos para los selectores
         citas_dia = Citas.objects.filter(
             dia_cit=fecha,
             estado_cita__in=["Aceptada", "Sin confirmar", "Realizadas"],
@@ -162,105 +169,46 @@ def cita(request):
 
     elif request.method == 'POST':
         formCitas = FormCitas(request.POST)
-        
-        print(request.POST)
-        
+
         # Validar formulario
         if not formCitas.is_valid():
-            return render(request, 'citas.html', {'form': formCitas})
+            messages.error(request, "Por favor corrige los errores del formulario.")
+            return render(request, 'citas.html', {
+                'form': formCitas,
+                'fecha': fecha,  # Reenvía la fecha para mantenerla en la vista
+            })
 
-        
-        # Obtener el id_servicio, id_prof, y paciente_id desde el formulario
-        id_servicio = formCitas.cleaned_data.get('id_servicio')
-        id_prof = formCitas.cleaned_data.get('id_prof')
-        paciente_id = formCitas.cleaned_data.get('id_pac')
-        id_lugar = formCitas.cleaned_data.get('id_lugar') 
-        id_usuario = formCitas.cleaned_data.get('id_usu') 
-        print(f"request.user: {request.user}")
-        print(f"request.user.id: {request.user.paciente_id}")
-
-        # Validación de servicio y profesional
-        if not id_servicio or not id_prof:
-            error = "Servicio o profesional no seleccionados"
-            return render(request, 'citas.html', {'error': error, 'form': formCitas})
-
+        # Obtener datos limpios y realizar el procesamiento
         try:
-            if isinstance(id_usuario, int):
-                instance_User = modelsEntrarSistema.CrearCuenta.objects.get(id=id_usuario)
-            else:  # Si ya tienes el objeto Servicio, solo asigna
-                instance_User = id_usuario  # id_servicio ya es un objeto Servicio
-            
+            # Aquí va la lógica para obtener instancias relacionadas, como servicios, profesionales, etc.
+            id_servicio = formCitas.cleaned_data.get('id_servicio')
+            id_prof = formCitas.cleaned_data.get('id_prof')
+            paciente_id = formCitas.cleaned_data.get('id_pac')
+            id_lugar = formCitas.cleaned_data.get('id_lugar')
+
             instance_Hora = modelsAdministrador.Horas.objects.get(id_hora=request.POST['id_hora'])
+            instance_User = modelsEntrarSistema.CrearCuenta.objects.get(id=formCitas.cleaned_data['id_usu'])
 
-            if isinstance(id_servicio, int):  # Verifica que id_servicio sea un identificador numérico
-                instance_Servicio = modelsAdministrador.Servicio.objects.get(id_servicio=id_servicio)
-            else:  # Si ya tienes el objeto Servicio, solo asigna
-                instance_Servicio = id_servicio  # id_servicio ya es un objeto Servicio
-
-            if isinstance(id_prof, int):  # Verifica que id_prof sea un identificador numérico
-                instance_Profesional = modelsAdministrador.Profesional.objects.get(id_prof=id_prof)
-            else:  # Si ya tienes el objeto Profesional, solo asigna
-                instance_Profesional = id_prof  # id_prof ya es un objeto Profesional
-
-            if isinstance(id_lugar, int):  # Verifica que id_lugar sea un identificador numérico
-                instance_Lugar = modelsAdministrador.Lugares.objects.get(id_lugar=id_lugar)
-            else:  # Si ya tienes el objeto Lugar, solo asigna
-                instance_Lugar = id_lugar  # id_lugar ya es un objeto Lugar
-                
-            if isinstance(paciente_id, int):
-                instance_paciente = modelsEntrarSistema.CrearCuenta.objects.get(id=paciente_id)
-            else: 
-                 instance_paciente = paciente_id
-
-
-            print(f"Usuario: {instance_User}")
-            print(f"Hora: {instance_Hora}")
-            print(f"Servicio: {instance_Servicio}")
-            print(f"Profesional: {instance_Profesional}")
-            print(f"Lugar: {instance_Lugar}")
-
-        except ObjectDoesNotExist as e:
-            error = f"Datos inválidos: {str(e)}"
-            return render(request, 'citas.html', {'error': error, 'form': formCitas})
-
-        # Crear cita sin paciente (si no se selecciona uno)
-        if paciente_id:  # Solo se asigna paciente si se ha seleccionado
-            try:
-                id_cita = Citas(
-                    id_usu=instance_User,
-                    id_lugar=instance_Lugar,
-                    id_hora=instance_Hora,
-                    id_pac=instance_paciente,
-                    id_servicio=instance_Servicio,
-                    id_prof=instance_Profesional,
-                    dia_cit=formCitas.cleaned_data['dia_cit'],
-                    nota_cit=formCitas.cleaned_data['nota_cit'],
-                    estado_cita='Sin confirmar'
-                )
-            except modelsAdministrador.Pacientes.DoesNotExist:
-                error = "Paciente inválido"
-                return render(request, 'citas.html', {'error': error, 'form': formCitas})
-        else:
-            id_cita = Citas(
+            # Crear y guardar la cita
+            nueva_cita = Citas(
                 id_usu=instance_User,
-                id_lugar=instance_Lugar,
+                id_lugar=modelsAdministrador.Lugares.objects.get(id_lugar=id_lugar),
                 id_hora=instance_Hora,
-                id_pac=instance_paciente,
-                id_servicio=instance_Servicio,
-                id_prof=instance_Profesional,
+                id_pac=modelsAdministrador.Pacientes.objects.get(id_pac=paciente_id),
+                id_servicio=modelsAdministrador.Servicio.objects.get(id_servicio=id_servicio),
+                id_prof=modelsAdministrador.Profesional.objects.get(id_prof=id_prof),
                 dia_cit=formCitas.cleaned_data['dia_cit'],
                 nota_cit=formCitas.cleaned_data['nota_cit'],
-                estado_cita='Sin confirmar'
+                estado_cita='Sin confirmar',
             )
+            nueva_cita.save()
+            messages.success(request, "¡Cita solicitada exitosamente!")
+            return redirect('cita')
 
-        # Guardar la cita
-        id_cita.save()
+        except ObjectDoesNotExist as e:
+            messages.error(request, f"Error: {e}")
+            return render(request, 'citas.html', {'form': formCitas})
 
-        # Mostrar un mensaje de éxito
-        messages.success(request, "¡Cita solicitada exitosamente!")
-
-        return redirect('cita')  # Redirigir a otra página o a la misma página
-    
     
 def get_lugares(request):
     id_servicio = request.GET.get('id_servicio')

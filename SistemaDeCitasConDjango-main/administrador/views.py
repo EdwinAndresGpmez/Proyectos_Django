@@ -424,6 +424,8 @@ def is_ajax(request):
     return request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
 
 
+from datetime import datetime
+
 def consultorio_cita(request):
     user = request.user
     if not user.is_authenticated:
@@ -435,23 +437,17 @@ def consultorio_cita(request):
         return redirect("inicio")
     else:
         if request.method == "GET":
-            csrf_variable = request.GET.get("csrfmiddlewaretoken")
-
-            lista_select = modelsUsuario.Citas.objects.filter(
-                id_cit=request.GET["id_cit"]
-            )
+            # Obtener la cita seleccionada
+            lista_select = modelsUsuario.Citas.objects.filter(id_cit=request.GET["id_cit"])
 
             consultas = [cita.id_pac for cita in lista_select]
-            print(type(consultas))
-
             if None in consultas:
                 lista_consulta = ""
-                print("none")
             else:
+                # Filtrar las consultas previas por paciente y estado "Realizada"
                 lista_consulta = Consultorio.objects.filter(
-                    id_cit__id_pac=consultas[0], id_cit__estado_cita="Realizada"
+                    id_cit__id_pac=consultas[0], consultorio_estado=True
                 )
-                print("else")
 
             return render(
                 request,
@@ -460,72 +456,52 @@ def consultorio_cita(request):
             )
 
         else:
-            print(request.POST)
-            instance_Citas = modelsUsuario.Citas.objects.get(
-                id_cit=request.POST["id_cit"]
-            )
+            # Obtener la cita de la base de datos
+            instance_Citas = modelsUsuario.Citas.objects.get(id_cit=request.POST["id_cit"])
 
-            # Validar y convertir el campo nacimiento_hidden
-            nacimiento_hidden = request.POST.get("nacimiento_hidden")
+            # Validar y convertir el campo nacimiento_con
+            nacimiento_hidden = request.POST.get("nacimiento_con")
             nacimiento_convertido = None
-
             if nacimiento_hidden and nacimiento_hidden != "nada":
                 try:
-                    # Intentar convertir la fecha al formato YYYY-MM-DD
-                    nacimiento_convertido = datetime.strptime(
-                        nacimiento_hidden, "%d de %B de %Y"
-                    ).date()
+                    nacimiento_convertido = datetime.strptime(nacimiento_hidden, "%d de %B de %Y").date()
                 except ValueError:
-                    # Error si la fecha no tiene el formato esperado
                     return render(
                         request,
                         "consultorio_citas.html",
                         {
                             "error": "El formato de la fecha de nacimiento no es válido. Debe ser YYYY-MM-DD.",
-                            "citaSelect": modelsUsuario.Citas.objects.filter(
-                                id_cit=request.POST["id_cit"]
-                            ),
+                            "citaSelect": modelsUsuario.Citas.objects.filter(id_cit=request.POST["id_cit"]),
                         },
                     )
 
-            # Crear la instancia del Consultorio
+            # Crear la instancia de Consultorio
             idCon = Consultorio(
                 id_cit=instance_Citas,
-                peso_con=request.POST["peso_con"],
-                altura_con=request.POST["altura_con"],
                 nota_con=request.POST["nota_con"],
                 nacimiento_con=nacimiento_convertido,
             )
-
             idCon.save()
 
-            # Actualizar el estado de la cita
+            # Actualizar el estado de la cita a "Realizada"
             idCit = modelsUsuario.Citas.objects.get(id_cit=request.POST["id_cit"])
             idCit.estado_cita = "Realizada"
             idCit.save()
 
-            # Registrar auditoría
+            # Registrar la auditoría
             Audi = Auditoria(
-                descripcion_aut=f"Se creado una 'consulta' en la tabla *Consultorio*, con el peso del paciente {request.POST['peso_con']} y con la nota de la consulta ({request.POST['nota_con']}) con el id {idCon.pk}, creado por el usuario: {request.user.id},"
+                descripcion_aut=f"Se creó una 'consulta' en la tabla *Consultorio*, con la nota de la consulta ({request.POST['nota_con']}) con el id {idCon.pk}, creado por el usuario: {request.user.id},"
             )
             Audi.save()
 
-            print("hecho")
             return redirect("consultorio")
-        return redirect("inicioAdmin")
 
 
 def consultorio(request):
-
-    # Si ya tiene sesión no le abre esta página
+    # Verificar si el usuario está autenticado
     user = request.user
     if not user.is_authenticated:
-        # HttpResponse('<script>alert("funcionó");</script>')
         return redirect("iniciarSesion")
-
-    lista_select = modelsUsuario.Citas.objects.filter(
-        citas_estado=True, estado_cita="Aceptada", id_cit=9
-    )
 
     fecha_hoy = datetime.today().strftime("%Y-%m-%d")
     tipoRol = TipoRol(request)
@@ -534,10 +510,12 @@ def consultorio(request):
         return redirect("inicio")
     else:
         if request.method == "GET":
-
+            # Obtener las citas de hoy con estado "Aceptada"
             lista_citas = modelsUsuario.Citas.objects.filter(
                 citas_estado=True, estado_cita="Aceptada", dia_cit=datetime.today()
             ).order_by("-id_cit")
+
+            # Obtener las citas de todos los días con estado "Aceptada"
             lista_consultorio = modelsUsuario.Citas.objects.filter(
                 citas_estado=True, estado_cita="Aceptada"
             )
@@ -547,56 +525,48 @@ def consultorio(request):
                 "consultorio.html",
                 {
                     "listaCitas": lista_citas,
-                    "citaSelect": lista_select,
+                    "citaSelect": modelsUsuario.Citas.objects.filter(id_cit=9),  # Es posible que quieras usar otro criterio aquí
                     "listaConsultorio": lista_consultorio,
                     "fecha": fecha_hoy,
                 },
             )
         else:
+            # Obtener las citas y consultorios
+            lista_citas = modelsUsuario.Citas.objects.filter(citas_estado=True, estado_cita="Aceptada")
+            lista_consultorio = modelsUsuario.Citas.objects.filter(citas_estado=True, estado_cita="Aceptada")
 
-            lista_citas = modelsUsuario.Citas.objects.filter(
-                citas_estado=True, estado_cita="Aceptada"
-            )
-            lista_consultorio = modelsUsuario.Citas.objects.filter(
-                citas_estado=True, estado_cita="Aceptada"
-            )
-            print("error")
+            instance_Citas = modelsUsuario.Citas.objects.get(id_cit=request.POST["id_cit"])
 
-            instance_Citas = modelsUsuario.Citas.objects.get(
-                id_cit=request.POST["id_cit"]
-            )
-
+            # Crear la instancia de Consultorio
             idCon = Consultorio(
                 id_cit=instance_Citas,
-                peso_con=request.POST["peso_con"],
-                altura_con=request.POST["altura_con"],
                 nota_con=request.POST["nota_con"],
+                nacimiento_con=request.POST["nacimiento_con"],  # Usar el campo nacimiento_con
             )
             idCon.save()
 
+            # Actualizar el estado de la cita a "Realizada"
             idCit = modelsUsuario.Citas(id_cit=request.POST["id_cit"])
             idCit.estado_cita = "Realizada"
             idCit.save()
 
-            # Aqui ponemos el codigo del trigger -------
-
+            # Registrar la auditoría
             Audi = Auditoria(
-                descripcion_aut=f"Se creado una 'consulta' en la tabla *Consultorio*, con el peso del paciente {request.POST['peso_con']} y con la nota de la consulta ({request.POST['nota_con']}) con el id {idCon.pk}, creado por el usuario: {request.user.id},"
+                descripcion_aut=f"Se creó una 'consulta' en la tabla *Consultorio*, con la nota de la consulta ({request.POST['nota_con']}) con el id {idCon.pk}, creado por el usuario: {request.user.id},"
             )
             Audi.save()
 
-            # fin de trigger ------
+            return render(
+                request,
+                "consultorio.html",
+                {
+                    "listaCitas": lista_citas,
+                    "citaSelect": modelsUsuario.Citas.objects.filter(id_cit=9),
+                    "listaConsultorio": lista_consultorio,
+                    "fecha": fecha_hoy,
+                },
+            )
 
-        return render(
-            request,
-            "consultorio.html",
-            {
-                "listaCitas": lista_citas,
-                "citaSelect": lista_select,
-                "listaConsultorio": lista_consultorio,
-                "fecha": fecha_hoy,
-            },
-        )
 
 
 def citas_admin(request):
@@ -1398,45 +1368,47 @@ def editar_servicios(request, id_servicio):
     if request.method == "POST":
         print("Datos POST recibidos:")
         print(request.POST)
+
         # Obtener el servicio a editar
         servicio = get_object_or_404(Servicio, id_servicio=id_servicio)
 
         # Actualizar los campos básicos del servicio
-        servicio.nombre_servicio = request.POST.get(
-            "nombre_servicio", servicio.nombre_servicio
-        )
-        servicio.descripcion_servicio = request.POST.get(
-            "descripcion_servicio", servicio.descripcion_servicio
-        )
-        servicio.servicio_estado = (
-            request.POST.get("servicio_estado") == "True"
-        )  # Convertir a booleano
+        servicio.nombre_servicio = request.POST.get("nombre_servicio", servicio.nombre_servicio)
+        servicio.descripcion_servicio = request.POST.get("descripcion_servicio", servicio.descripcion_servicio)
+        servicio.servicio_estado = request.POST.get("servicio_estado") == "True"  # Convertir a booleano
 
         # Obtener los profesionales seleccionados (IDs enviados desde el formulario)
         profesionales_ids = request.POST.getlist("profesionales[]")
-        print(
-            "Profesionales seleccionados:", profesionales_ids
-        )  # Verifica si los profesionales están llegando correctamente
+        print("Profesionales seleccionados:", profesionales_ids)
 
         # Si hay profesionales seleccionados, obtenemos los objetos correspondientes
         if profesionales_ids:
             profesionales = Profesional.objects.filter(id_prof__in=profesionales_ids)
-            print(
-                "Profesionales encontrados:", profesionales
-            )  # Verifica si se encuentran correctamente los profesionales
+            print("Profesionales encontrados:", profesionales)
 
             # Actualizar la relación ManyToMany entre el servicio y los profesionales
-            servicio.profesionales.set(
-                profesionales
-            )  # Asocia los profesionales seleccionados al servicio
+            servicio.profesionales.set(profesionales)  # Asocia los profesionales seleccionados al servicio
         else:
             servicio.profesionales.clear()  # Si no hay profesionales seleccionados, limpia la relación
 
         # Guardar los cambios en el servicio
         servicio.save()
 
+        # Obtener los datos actualizados del servicio para enviarlos en la respuesta
+        servicio_actualizado = {
+            "id_servicio": servicio.id_servicio,
+            "nombre_servicio": servicio.nombre_servicio,
+            "descripcion_servicio": servicio.descripcion_servicio,
+            "servicio_estado": servicio.servicio_estado,
+            "profesionales": [
+                {"id_prof": prof.id_prof, "nombre_prof": prof.nombre_prof}
+                for prof in servicio.profesionales.all()
+            ]
+        }
+
+        # Devolver los datos actualizados en la respuesta JSON
         return JsonResponse(
-            {"status": "success", "message": "Servicio editado correctamente."}
+            {"status": "success", "message": "Servicio editado correctamente.", "servicio": servicio_actualizado}
         )
     else:
         return JsonResponse({"status": "error", "message": "Método no permitido."})

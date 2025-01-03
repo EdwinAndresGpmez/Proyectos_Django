@@ -31,7 +31,7 @@ class FormCitas(forms.ModelForm):
 
     class Meta:
         model = Citas
-        fields = ('id_usu', 'id_lugar', 'id_hora', 'id_pac',
+        fields = ('id_usu', 'id_lugar', 'id_hora', 'id_pac', 
                   'dia_cit', 'nota_cit', 'estado_cita',  'id_servicio', 'id_prof')
 
     def clean(self):

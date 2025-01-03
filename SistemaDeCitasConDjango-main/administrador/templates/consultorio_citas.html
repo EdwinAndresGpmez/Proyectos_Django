@@ -1,14 +1,6 @@
-<!-- Plantilla de la cabecera de página, no supe como hacerlo con html 
-así que transforme el archivo a PHP -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
 {% include "cabecera-administrador.html" %}
 
-<!--
-<style>
-    .div_select_cita {
-        display: block;
-    }
-</style>-->
 <!-- Titulo de la página actual-->
 <h1 class="text-center border border-dark p-3 paginas-titulo">
     CONSULTA EN EJECUCIÓN
@@ -16,12 +8,14 @@ así que transforme el archivo a PHP -->
 
 <!-- Línea superadora -->
 <hr />
+
 {% for cita in citaSelect %}
 {% if cita.id_pac %}
 <h3 class="consultorio-h3">Cita en Proceso para {{ cita.id_pac.nombre_pac }} </h3>
 {% else %}
 <h3 class="consultorio-h3">Cita en Proceso para paciente, por primera vez </h3>
 {% endif %}
+
 <div class="container-fluid consultorio-container border">
     <form action="{% url 'consultorio_cita' %}" class="needs-validation" method="post" novalidate>
         {% csrf_token %}
@@ -37,7 +31,6 @@ así que transforme el archivo a PHP -->
                     <div class="input-group mb-3">
                         <input type="text" class="form-control" placeholder="{{ cita.id_lugar.ubicacion_lugar }}"
                             disabled>
-
                     </div>
 
                     <label class="form-label">Motivo de la Cita</label>
@@ -65,42 +58,9 @@ así que transforme el archivo a PHP -->
                             </div>
                         </div>
                         <div class="col-2"></div>
-                        <div class="col-5">
-                            <label class="form-label">Peso del paciente</label>
-                            <div class="input-group mb-3">
-                                <input name="peso_con" type="text" class="form-control"
-                                    onkeypress="return SoloNumeros(event);" onpaste="return false" minlength="1"
-                                    maxlength="10" required>
-                                <div class="invalid-tooltip">
-                                    Es necesario escribir el peso del paciente
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
-                    <div class="col-12 d-flex">
-                        <div class="col-5">
-                            <label class="form-label">Nombre del paciente</label>
-                            <div class="input-group mb-3">
-                                <input name="peso_con" type="text" class="form-control"
-                                    placeholder="{{ cita.id_pac.nombre_pac }}" disabled>
-                            </div>
-                        </div>
-                        <div class="col-2"></div>
-                        <div class="col-5">
-                            <label class="form-label">Altura del paciente</label>
-                            <div class="input-group mb-3">
-                                <input name="altura_con" type="text" class="form-control"
-                                    onkeypress="return SoloNumeros(event);" onpaste="return false" minlength="1"
-                                    maxlength="10" required>
-                                <div class="invalid-tooltip">
-                                    Es necesario escribir la altura del paciente
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
-
 
                 <div class="col-8 mb-3">
                     <label class="form-label">Notas/Observaciones</label>
@@ -126,14 +86,12 @@ así que transforme el archivo a PHP -->
                 <button type="submit" class="w-100 btn btn-primary btn-lg text-white">Enviar</button>
             </div>
             <div class="col-2"></div>
-
         </div>
     </form>
 
 </div>
 
 <hr>
-
 
 {% if listaPrevia %}
 <h3 class="consultorio-h3">Cita anterior</h3>
@@ -179,29 +137,8 @@ así que transforme el archivo a PHP -->
                     </div>
                 </div>
                 <div class="col-2"></div>
-                <div class="col-5">
-                    <label class="form-label">Peso del paciente</label>
-                    <div class="input-group mb-3">
-                        <input class="form-control" type="text" placeholder="{{ anterior.peso_con }}" disabled>
-                    </div>
-                </div>
             </div>
 
-            <div class="col-12 d-flex">
-                <div class="col-5">
-                    <label class="form-label">Fecha de Cita Anterior</label>
-                    <div class="input-group mb-3">
-                        <input type="text" class="form-control" placeholder="{{ anterior.id_cit.dia_cit }}" disabled>
-                    </div>
-                </div>
-                <div class="col-2"></div>
-                <div class="col-5">
-                    <label class="form-label">Altura del paciente</label>
-                    <div class="input-group mb-3">
-                        <input type="text" class="form-control" placeholder="{{ anterior.altura_con }}" disabled>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <div class="col-8 mb-3">
@@ -213,9 +150,7 @@ así que transforme el archivo a PHP -->
             </div>
         </div>
 
-
     </div>
-
 
 </div>
 {% endfor %}
@@ -246,8 +181,6 @@ document.addEventListener("DOMContentLoaded", function () {
         console.error("El elemento 'nacimiento_con_hidden' no existe.");
     }
 });
-
 </script>
-
 
 {% include "pie.html" %}
