@@ -5,11 +5,26 @@
     BIENVENIDO {{ user.nombre }}
 </h1>
 
+<!-- Contenedor de la información de las citas -->
+<!-- Contenedor de la información de las citas -->
+<div class="container-fluid inicio-usuario-container">
+    {% if messages %}
+    <div>
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags }}{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
 <!-- Línea separadora -->
 <hr />
 
 <!-- Contenedor de la información de las citas -->
 <div class="container-fluid inicio-usuario-container">
+    
 
     {% for rol in listaRoles %}
     {% if rol.es_administrador %}

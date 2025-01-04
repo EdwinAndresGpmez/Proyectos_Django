@@ -570,10 +570,9 @@ def consultorio(request):
 
 
 def citas_admin(request):
-    # Si ya tiene sesión no le abre esta página
+    # Verificar si el usuario está autenticado
     user = request.user
     if not user.is_authenticated:
-        # HttpResponse('<script>alert("funcionó");</script>')
         return redirect("iniciarSesion")
 
     tipoRol = TipoRol(request)
@@ -582,7 +581,6 @@ def citas_admin(request):
         return redirect("inicio")
     else:
         if request.method == "GET":
-
             lista_citas_aceptadas = modelsUsuario.Citas.objects.filter(
                 estado_cita="Aceptada", citas_estado=True
             )
@@ -596,6 +594,16 @@ def citas_admin(request):
                 estado_cita="Realizada", citas_estado=True
             )
 
+            if request.is_ajax():  # Si es una solicitud AJAX, devolver las citas actualizadas
+                citas_data = {
+                    'aceptadas': list(lista_citas_aceptadas.values('id_cit', 'id_usu__nombre', 'id_pac__nombre_pac', 'dia_cit', 'id_hora__inicio_hora', 'id_hora__final_hora', 'id_lugar__nombre_lugar')),
+                    'rechazadas': list(lista_citas_rechazadas.values('id_cit', 'id_usu__nombre', 'id_pac__nombre_pac', 'dia_cit', 'id_hora__inicio_hora', 'id_hora__final_hora', 'id_lugar__nombre_lugar')),
+                    'pendientes': list(lista_citas_pendientes.values('id_cit', 'id_usu__nombre', 'id_pac__nombre_pac', 'dia_cit', 'id_hora__inicio_hora', 'id_hora__final_hora', 'id_lugar__nombre_lugar')),
+                    'realizadas': list(lista_citas_realizadas.values('id_cit', 'id_usu__nombre', 'id_pac__nombre_pac', 'dia_cit', 'id_hora__inicio_hora', 'id_hora__final_hora', 'id_lugar__nombre_lugar')),
+                }
+                return JsonResponse(citas_data)
+
+            # Si no es una solicitud AJAX, simplemente renderizar la vista
             return render(
                 request,
                 "citas_admin.html",
@@ -607,7 +615,58 @@ def citas_admin(request):
                 },
             )
         else:
+            # Aquí maneja los cambios de estado
+            if "btnRevisarAceptar" in request.POST:
+                idCita = modelsUsuario.Citas.objects.get(id_cit=request.POST["id_cit"])
+                idCita.estado_cita = "Aceptada"
+                idCita.save()
+                # Registrar en la auditoría
+                Audi = Auditoria(
+                    descripcion_aut=f"Se aceptó una 'cita' con id {request.POST['id_cit']}, aceptado por el usuario: {request.user.id}"
+                )
+                Audi.save()
 
+            elif "btnRevisarRechazar" in request.POST:
+                idCita = modelsUsuario.Citas.objects.get(id_cit=request.POST["id_cit"])
+                idCita.estado_cita = "Rechazada"
+                idCita.save()
+                # Registrar en la auditoría
+                Audi = Auditoria(
+                    descripcion_aut=f"Se rechazó una 'cita' con id {request.POST['id_cit']}, rechazado por el usuario: {request.user.id}"
+                )
+                Audi.save()
+
+            elif "btnAceptadaRechazar" in request.POST:
+                idCita = modelsUsuario.Citas.objects.get(id_cit=request.POST["id_cit"])
+                idCita.estado_cita = "Rechazada"
+                idCita.save()
+                # Registrar en la auditoría
+                Audi = Auditoria(
+                    descripcion_aut=f"Se rechazó una cita aceptada con id {request.POST['id_cit']}, rechazado por el usuario: {request.user.id}"
+                )
+                Audi.save()
+
+            elif "btnRechazarAceptar" in request.POST:
+                idCita = modelsUsuario.Citas.objects.get(id_cit=request.POST["id_cit"])
+                idCita.estado_cita = "Aceptada"
+                idCita.save()
+                # Registrar en la auditoría
+                Audi = Auditoria(
+                    descripcion_aut=f"Se aceptó una cita rechazada con id {request.POST['id_cit']}, aceptado por el usuario: {request.user.id}"
+                )
+                Audi.save()
+
+            elif "btnRechazarEliminar" in request.POST:
+                idCita = modelsUsuario.Citas.objects.get(id_cit=request.POST["id_cit"])
+                idCita.citas_estado = False
+                idCita.save()
+                # Registrar en la auditoría
+                Audi = Auditoria(
+                    descripcion_aut=f"Se eliminó una cita con id {request.POST['id_cit']}, eliminado por el usuario: {request.user.id}"
+                )
+                Audi.save()
+
+            # Después de cualquier cambio de estado, devolver las citas actualizadas por AJAX
             lista_citas_aceptadas = modelsUsuario.Citas.objects.filter(
                 estado_cita="Aceptada", citas_estado=True
             )
@@ -617,78 +676,20 @@ def citas_admin(request):
             lista_citas_pendientes = modelsUsuario.Citas.objects.filter(
                 estado_cita="Sin confirmar", citas_estado=True
             )
+            lista_citas_realizadas = modelsUsuario.Citas.objects.filter(
+                estado_cita="Realizada", citas_estado=True
+            )
 
-            if "btnRevisarAceptar" in request.POST:
-                print(request.POST)
-                idCita = modelsUsuario.Citas.objects.get(id_cit=request.POST["id_cit"])
-                idCita.estado_cita = "Aceptada"
-                idCita.save()
+            if request.is_ajax():
+                citas_data = {
+                    'aceptadas': list(lista_citas_aceptadas.values('id_cit', 'id_usu__nombre', 'id_pac__nombre_pac', 'dia_cit', 'id_hora__inicio_hora', 'id_hora__final_hora', 'id_lugar__nombre_lugar')),
+                    'rechazadas': list(lista_citas_rechazadas.values('id_cit', 'id_usu__nombre', 'id_pac__nombre_pac', 'dia_cit', 'id_hora__inicio_hora', 'id_hora__final_hora', 'id_lugar__nombre_lugar')),
+                    'pendientes': list(lista_citas_pendientes.values('id_cit', 'id_usu__nombre', 'id_pac__nombre_pac', 'dia_cit', 'id_hora__inicio_hora', 'id_hora__final_hora', 'id_lugar__nombre_lugar')),
+                    'realizadas': list(lista_citas_realizadas.values('id_cit', 'id_usu__nombre', 'id_pac__nombre_pac', 'dia_cit', 'id_hora__inicio_hora', 'id_hora__final_hora', 'id_lugar__nombre_lugar')),
+                }
+                return JsonResponse(citas_data)
 
-                # Aqui ponemos el codigo del trigger -------
-
-                Audi = Auditoria(
-                    descripcion_aut=f"Se aceptó una 'cita' en la tabla *Citas*, con el id {request.POST['id_cit']}, aceptado por el usuario: {request.user.id},"
-                )
-                Audi.save()
-
-                # fin de trigger ------
-
-            elif "btnRevisarRechazar" in request.POST:
-                idCita = modelsUsuario.Citas.objects.get(id_cit=request.POST["id_cit"])
-                idCita.estado_cita = "Rechazada"
-                idCita.save()
-
-                # Aqui ponemos el codigo del trigger -------
-
-                Audi = Auditoria(
-                    descripcion_aut=f"Se rechazó una 'cita' en la tabla *Citas*, con el id {request.POST['id_cit']}, rechazado por el usuario: {request.user.id},"
-                )
-                Audi.save()
-
-                # fin de trigger ------
-
-            elif "btnAceptadaRechazar" in request.POST:
-                idCita = modelsUsuario.Citas.objects.get(id_cit=request.POST["id_cit"])
-                idCita.estado_cita = "Rechazada"
-                idCita.save()
-
-                # Aqui ponemos el codigo del trigger -------
-
-                Audi = Auditoria(
-                    descripcion_aut=f"Se rechazó una 'cita' antes aceptada, en la tabla *Citas*, con el id {request.POST['id_cit']}, rechazado por el usuario: {request.user.id},"
-                )
-                Audi.save()
-
-                # fin de trigger ------
-
-            elif "btnRechazarAceptar" in request.POST:
-                idCita = modelsUsuario.Citas.objects.get(id_cit=request.POST["id_cit"])
-                idCita.estado_cita = "Aceptada"
-                idCita.save()
-
-                # Aqui ponemos el codigo del trigger -------
-
-                Audi = Auditoria(
-                    descripcion_aut=f"Se aceptó una 'cita' antes rechazada, en la tabla *Citas*, con el id {request.POST['id_cit']}, rechazado por el usuario: {request.user.id},"
-                )
-                Audi.save()
-
-                # fin de trigger ------
-
-            elif "btnRechazarEliminar" in request.POST:
-                idCita = modelsUsuario.Citas.objects.get(id_cit=request.POST["id_cit"])
-                idCita.citas_estado = False
-                idCita.save()
-
-                # Aqui ponemos el codigo del trigger -------
-
-                Audi = Auditoria(
-                    descripcion_aut=f"Se eliminó una 'cita' en la tabla *Citas*, con el id {request.POST['id_cit']}, eliminado por el usuario: {request.user.id},"
-                )
-                Audi.save()
-
-                # fin de trigger ------
-
+        # Si no es AJAX, solo renderizar la vista
         return render(
             request,
             "citas_admin.html",
@@ -696,6 +697,7 @@ def citas_admin(request):
                 "listaCitasAceptadas": lista_citas_aceptadas,
                 "listaCitasRechazadas": lista_citas_rechazadas,
                 "listaCitasPendientes": lista_citas_pendientes,
+                "listaCitasRealizadas": lista_citas_realizadas,
             },
         )
 
